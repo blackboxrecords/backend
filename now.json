@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "alias": [],
+  "env": {
+    "DB_URI": "@db-uri",
+    "SPOTIFY_CLIENT_ID": "@spotify-client-id",
+    "SPOTIFY_CLIENT_SECRET": "@spotify-client-secret"
+  },
+  "builds": [{ "src": "index.js", "use": "@now/node" }],
+  "routes": [
+    {
+      "src": "(.*)",
+      "dest": "/index.js",
+      "methods": ["GET", "POST", "OPTIONS"]
+    }
+  ]
+}
