@@ -29,7 +29,7 @@ const mongoDisconnect = asyncExpress(async (req, res, next) => {
 
 app.use(mongoConnect)
 
-require('./routes/user')(app)
+require('./routes')(app)
 
 if (process.env.NODE_ENV !== 'development') {
   app.use(mongoDisconnect)
