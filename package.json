@@ -1,0 +1,19 @@
+{
+  "name": "spotify-connect",
+  "version": "0.0.1",
+  "description": "Spotify account linking",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/blackboxrecords/spotify-connect.git"
+  },
+  "author": "Chance Hudson",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/blackboxrecords/spotify-connect/issues"
+  },
+  "homepage": "https://github.com/blackboxrecords/spotify-connect#readme"
+}
