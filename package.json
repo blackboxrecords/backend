@@ -4,16 +4,32 @@
   "description": "Spotify account linking",
   "main": "index.js",
   "scripts": {
+    "start": "node -e \"require('dotenv').config(); require('.').listen(4000);\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/blackboxrecords/spotify-connect.git"
   },
+  "eslintConfig": {
+    "extends": [
+      "@jchancehud/eslint-config"
+    ]
+  },
   "author": "Chance Hudson",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/blackboxrecords/spotify-connect/issues"
   },
-  "homepage": "https://github.com/blackboxrecords/spotify-connect#readme"
+  "homepage": "https://github.com/blackboxrecords/spotify-connect#readme",
+  "dependencies": {
+    "async-express": "^0.1.4",
+    "express": "^4.16.4",
+    "mongoose": "^5.5.7"
+  },
+  "devDependencies": {
+    "@jchancehud/eslint-config": "0.0.10",
+    "dotenv": "^8.0.0",
+    "now": "^15.2.0"
+  }
 }
