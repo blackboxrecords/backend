@@ -3,13 +3,17 @@ const mongoose = require('mongoose')
 const UserSchema = new mongoose.Schema({
   email: {
     type: String,
-    required: true,
+    required: false,
   },
   accessToken: {
     type: String,
     required: true,
   },
   refreshToken: {
+    type: String,
+    required: true,
+  },
+  scope: {
     type: String,
     required: true,
   },

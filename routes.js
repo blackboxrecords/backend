@@ -10,6 +10,16 @@ module.exports = (app) => {
   app.get('/', testPage)
 }
 
+// A function to auto exchange a refresh token for a new access token
+// Probably a good idea to always assume it's expired
+const retrieveNewToken = async (refreshToken) => {
+  const { data } = await axios.post('https://accounts.spotify.com/api/token', {
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken,
+  })
+  return data
+}
+
 const authUser = asyncExpress(async (req, res) => {
   const code = req.query.code
   const clientID = process.env.SPOTIFY_CLIENT_ID
@@ -27,10 +37,15 @@ const authUser = asyncExpress(async (req, res) => {
         return Object.entries(data).map(x => `${encodeURIComponent(x[0])}=${encodeURIComponent(x[1])}`).join('&')
       }]
     })
-    console.log(data)
+    await User.create({
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      scope: data.scope,
+      expiresAt: new Date((+new Date()) + data.expires_in),
+    })
   } catch (err) {
     // Redirect to an error url
-    console.log(err)
+    console.log('Error authorizing', err)
   }
   res.redirect(301, 'https://blackboxrecordclub.com/successful-connection')
 })
