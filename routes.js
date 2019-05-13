@@ -3,8 +3,6 @@ const User = mongoose.model('User')
 const asyncExpress = require('async-express')
 const axios = require('axios')
 
-const REDIRECT_URI = 'http://localhost:4000/auth'
-
 module.exports = (app) => {
   app.get('/auth', authUser)
   app.get('/', testPage)
@@ -28,7 +26,7 @@ const authUser = asyncExpress(async (req, res) => {
     const { data } = await axios.post('https://accounts.spotify.com/api/token', {
       grant_type: 'authorization_code',
       code,
-      redirect_uri: REDIRECT_URI,
+      redirect_uri: process.env.REDIRECT_URI,
       client_id: clientID,
       client_secret: clientSecret
     }, {
@@ -51,7 +49,7 @@ const authUser = asyncExpress(async (req, res) => {
 })
 
 const testPage = (req, res) => {
-  const redirectURI = encodeURIComponent(REDIRECT_URI)
+  const redirectURI = encodeURIComponent(process.env.REDIRECT_URI)
   const scopes = ['user-top-read', 'user-library-read', 'user-read-email'].join(' ')
   const clientID = process.env.SPOTIFY_CLIENT_ID
   res.send(`

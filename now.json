@@ -1,10 +1,11 @@
 {
   "version": 2,
-  "alias": [],
+  "alias": ["spotify-connect.plug.sh"],
   "env": {
     "DB_URI": "@db-uri",
     "SPOTIFY_CLIENT_ID": "@spotify-client-id",
-    "SPOTIFY_CLIENT_SECRET": "@spotify-client-secret"
+    "SPOTIFY_CLIENT_SECRET": "@spotify-client-secret",
+    "REDIRECT_URI": "@redirect-uri"
   },
   "builds": [{ "src": "index.js", "use": "@now/node" }],
   "routes": [
