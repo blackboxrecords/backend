@@ -22,6 +22,7 @@ module.exports = (app) => {
   app.get('/auth', authUser)
   app.get('/', testPage)
   app.get('/sync', loadUserArtists)
+  app.get('/users', loadUsers)
 }
 
 // A function to auto exchange a refresh token for a new access token
@@ -60,9 +61,28 @@ const authUser = asyncExpress(async (req, res) => {
         transformRequest: [URITransform],
       }
     )
+    const { data: userData } = await axios.get(
+      'https://api.spotify.com/v1/me',
+      {
+        headers: {
+          Authorization: `Bearer ${data.access_token}`,
+        },
+      }
+    )
+    const existingUser = await User.findOne({
+      email: userData.email,
+    }).exec()
+    if (existingUser) {
+      return res.redirect(
+        301,
+        'https://blackboxrecordclub.com/successful-connection'
+      )
+    }
     await User.create({
       refreshToken: data.refresh_token,
       scope: data.scope,
+      email: userData.email,
+      name: userData.display_name,
     })
   } catch (err) {
     // Redirect to an error url
@@ -100,6 +120,19 @@ const loadUserArtists = asyncExpress(async (req, res) => {
     }))
   )
   res.status(204).end()
+})
+
+const loadUsers = asyncExpress(async (req, res) => {
+  const users = await User.find({})
+    .lean()
+    .exec()
+  res.json(
+    _.map(users, (user) => ({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+    }))
+  )
 })
 
 const testPage = (req, res) => {
