@@ -5,20 +5,12 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
-  accessToken: {
-    type: String,
-    required: true,
-  },
   refreshToken: {
     type: String,
     required: true,
   },
   scope: {
     type: String,
-    required: true,
-  },
-  expiresAt: {
-    type: Date,
     required: true,
   },
 })

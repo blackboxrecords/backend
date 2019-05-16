@@ -1,60 +1,105 @@
 const mongoose = require('mongoose')
 const User = mongoose.model('User')
+const UserArtist = mongoose.model('UserArtist')
 const asyncExpress = require('async-express')
 const axios = require('axios')
+const _ = require('lodash')
+
+axios.defaults.headers.post['Content-Type'] =
+  'application/x-www-form-urlencoded'
+const AuthString = `${process.env.SPOTIFY_CLIENT_ID}:${
+  process.env.SPOTIFY_CLIENT_SECRET
+}`
+axios.defaults.headers.post.Authorization = `Basic ${Buffer.from(
+  AuthString
+).toString('base64')}`
+const URITransform = (data) =>
+  Object.entries(data)
+    .map((x) => `${encodeURIComponent(x[0])}=${encodeURIComponent(x[1])}`)
+    .join('&')
 
 module.exports = (app) => {
   app.get('/auth', authUser)
   app.get('/', testPage)
+  app.get('/sync', loadUserArtists)
 }
 
 // A function to auto exchange a refresh token for a new access token
 // Probably a good idea to always assume it's expired
-const retrieveNewToken = async (refreshToken) => {
-  const { data } = await axios.post('https://accounts.spotify.com/api/token', {
-    grant_type: 'refresh_token',
-    refresh_token: refreshToken,
+const loadAuthedUser = async (userId) => {
+  const user = await User.findOne({
+    _id: mongoose.Types.ObjectId(userId),
   })
-  return data
+    .lean()
+    .exec()
+  if (!user) throw new Error('No user found for id', userId)
+  const { data } = await axios.post(
+    'https://accounts.spotify.com/api/token',
+    {
+      grant_type: 'refresh_token',
+      refresh_token: user.refreshToken,
+    },
+    {
+      transformRequest: [URITransform],
+    }
+  )
+  return { ...user, accessToken: data.access_token }
 }
 
 const authUser = asyncExpress(async (req, res) => {
   const { code } = req.query
-  const clientID = process.env.SPOTIFY_CLIENT_ID
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET
   try {
     const { data } = await axios.post(
       'https://accounts.spotify.com/api/token',
       {
-        grant_type: 'authorization_code',
         code,
+        grant_type: 'authorization_code',
         redirect_uri: process.env.REDIRECT_URI,
-        client_id: clientID,
-        client_secret: clientSecret,
       },
       {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        transformRequest: [
-          (data, headers) =>
-            Object.entries(data)
-              .map(
-                (x) => `${encodeURIComponent(x[0])}=${encodeURIComponent(x[1])}`
-              )
-              .join('&'),
-        ],
+        transformRequest: [URITransform],
       }
     )
     await User.create({
-      accessToken: data.access_token,
       refreshToken: data.refresh_token,
       scope: data.scope,
-      expiresAt: new Date(+new Date() + data.expires_in),
     })
   } catch (err) {
     // Redirect to an error url
     console.log('Error authorizing', err)
   }
   res.redirect(301, 'https://blackboxrecordclub.com/successful-connection')
+})
+
+const loadUserArtists = asyncExpress(async (req, res) => {
+  const { userId } = req.query
+  const user = await loadAuthedUser(userId)
+  const { data } = await axios.get(
+    'https://api.spotify.com/v1/me/top/artists',
+    {
+      params: {
+        limit: 50,
+      },
+      headers: {
+        Authorization: `Bearer ${user.accessToken}`,
+      },
+    }
+  )
+  const { items } = data
+  await UserArtist.deleteMany({
+    ownerId: mongoose.Types.ObjectId(user._id),
+    name: {
+      $in: _.map(items, 'name'),
+    },
+  }).exec()
+  await UserArtist.create(
+    _.map(items, (item) => ({
+      ...item,
+      followerCount: item.followers.total,
+      ownerId: user._id,
+    }))
+  )
+  res.status(204).end()
 })
 
 const testPage = (req, res) => {

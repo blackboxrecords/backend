@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 mongoose.set('useCreateIndex', true)
 require('./models/user')
+require('./models/user-artist')
 
 const express = require('express')
 const asyncExpress = require('async-express')
