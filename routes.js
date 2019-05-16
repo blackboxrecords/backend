@@ -19,27 +19,36 @@ const retrieveNewToken = async (refreshToken) => {
 }
 
 const authUser = asyncExpress(async (req, res) => {
-  const code = req.query.code
+  const { code } = req.query
   const clientID = process.env.SPOTIFY_CLIENT_ID
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET
   try {
-    const { data } = await axios.post('https://accounts.spotify.com/api/token', {
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: process.env.REDIRECT_URI,
-      client_id: clientID,
-      client_secret: clientSecret
-    }, {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      transformRequest: [(data, headers) => {
-        return Object.entries(data).map(x => `${encodeURIComponent(x[0])}=${encodeURIComponent(x[1])}`).join('&')
-      }]
-    })
+    const { data } = await axios.post(
+      'https://accounts.spotify.com/api/token',
+      {
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: process.env.REDIRECT_URI,
+        client_id: clientID,
+        client_secret: clientSecret,
+      },
+      {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        transformRequest: [
+          (data, headers) =>
+            Object.entries(data)
+              .map(
+                (x) => `${encodeURIComponent(x[0])}=${encodeURIComponent(x[1])}`
+              )
+              .join('&'),
+        ],
+      }
+    )
     await User.create({
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
       scope: data.scope,
-      expiresAt: new Date((+new Date()) + data.expires_in),
+      expiresAt: new Date(+new Date() + data.expires_in),
     })
   } catch (err) {
     // Redirect to an error url
@@ -50,7 +59,9 @@ const authUser = asyncExpress(async (req, res) => {
 
 const testPage = (req, res) => {
   const redirectURI = encodeURIComponent(process.env.REDIRECT_URI)
-  const scopes = ['user-top-read', 'user-library-read', 'user-read-email'].join(' ')
+  const scopes = ['user-top-read', 'user-library-read', 'user-read-email'].join(
+    ' '
+  )
   const clientID = process.env.SPOTIFY_CLIENT_ID
   res.send(`
   <html>
