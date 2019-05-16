@@ -31,6 +31,7 @@
   "devDependencies": {
     "@jchancehud/eslint-config": "0.0.10",
     "dotenv": "^8.0.0",
+    "eslint": "^5.16.0",
     "now": "^15.2.0"
   }
 }
