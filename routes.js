@@ -21,9 +21,27 @@ const URITransform = (data) =>
 module.exports = (app) => {
   app.get('/auth', authUser)
   app.get('/', testPage)
-  app.get('/sync', loadUserArtists)
+  app.get('/sync', syncUserArtists)
   app.get('/users', loadUsers)
+  app.get('/users/artists', loadUserArtists)
 }
+
+const loadUserArtists = asyncExpress(async (req, res) => {
+  const userArtists = await UserArtist.find({
+    ownerId: mongoose.Types.ObjectId(req.query.userId),
+  })
+    .lean()
+    .exec()
+  const csvData = userArtists
+    .map(
+      (userArtist) =>
+        `${userArtist.name},${userArtist.popularity},${
+          userArtist.followerCount
+        },${userArtist.genres.join(',')}`
+    )
+    .join('\n')
+  res.send(csvData)
+})
 
 // A function to auto exchange a refresh token for a new access token
 // Probably a good idea to always assume it's expired
@@ -91,7 +109,7 @@ const authUser = asyncExpress(async (req, res) => {
   res.redirect(301, 'https://blackboxrecordclub.com/successful-connection')
 })
 
-const loadUserArtists = asyncExpress(async (req, res) => {
+const syncUserArtists = asyncExpress(async (req, res) => {
   const { userId } = req.query
   const user = await loadAuthedUser(userId)
   const { data } = await axios.get(
