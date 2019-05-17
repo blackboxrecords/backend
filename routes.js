@@ -116,7 +116,7 @@ const authUser = asyncExpress(async (req, res) => {
       email: userData.email,
     }).exec()
     if (existingUser) {
-      _syncUserArtists(existingUser._id)
+      await _syncUserArtists(existingUser._id)
       return res.redirect(
         301,
         'https://blackboxrecordclub.com/successful-connection'
@@ -128,7 +128,7 @@ const authUser = asyncExpress(async (req, res) => {
       email: userData.email,
       name: userData.display_name,
     })
-    _syncUserArtists(created._id)
+    await _syncUserArtists(created._id)
   } catch (err) {
     // Redirect to an error url
     console.log('Error authorizing', err)
