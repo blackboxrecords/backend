@@ -42,8 +42,6 @@ const loadUserArtists = asyncExpress(async (req, res) => {
   ]
   const sortedData = _.chain(userArtists)
     .groupBy('owner.email')
-    .map((arr) => _.sortBy(arr, 'popularity'))
-    .map((arr) => _.reverse(arr))
     .map((arr) =>
       _.map(arr, (userArtist, index) => ({
         ...userArtist,
