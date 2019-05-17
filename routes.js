@@ -118,17 +118,19 @@ const authUser = asyncExpress(async (req, res) => {
       email: userData.email,
     }).exec()
     if (existingUser) {
+      _syncUserArtists(existingUser._id)
       return res.redirect(
         301,
         'https://blackboxrecordclub.com/successful-connection'
       )
     }
-    await User.create({
+    const created = await User.create({
       refreshToken: data.refresh_token,
       scope: data.scope,
       email: userData.email,
       name: userData.display_name,
-    })
+    }).exec()
+    _syncUserArtists(created._id)
   } catch (err) {
     // Redirect to an error url
     console.log('Error authorizing', err)
@@ -138,6 +140,11 @@ const authUser = asyncExpress(async (req, res) => {
 
 const syncUserArtists = asyncExpress(async (req, res) => {
   const { userId } = req.query
+  await _syncUserArtists(userId)
+  res.status(204).end()
+})
+
+const _syncUserArtists = async (userId) => {
   const user = await loadAuthedUser(userId)
   const { data } = await axios.get(
     'https://api.spotify.com/v1/me/top/artists',
@@ -164,8 +171,7 @@ const syncUserArtists = asyncExpress(async (req, res) => {
       ownerId: user._id,
     }))
   )
-  res.status(204).end()
-})
+}
 
 const loadUsers = asyncExpress(async (req, res) => {
   const users = await User.find({})
