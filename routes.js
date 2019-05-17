@@ -40,7 +40,6 @@ const loadUserArtists = asyncExpress(async (req, res) => {
     'Followers',
     'Genres',
   ]
-
   const sortedData = _.chain(userArtists)
     .groupBy('owner.email')
     .map((arr) => _.sortBy(arr, 'popularity'))
@@ -65,7 +64,10 @@ const loadUserArtists = asyncExpress(async (req, res) => {
     )
     .value()
   sortedData.unshift(fields.join(','))
-  res.send(sortedData.join('\n'))
+  const finalCSV = sortedData.join('\n')
+  res.set('Content-Type', 'text/csv')
+  res.set('Content-Disposition', 'attachment; filename="artist-data.csv"')
+  res.send(finalCSV)
 })
 
 // A function to auto exchange a refresh token for a new access token
