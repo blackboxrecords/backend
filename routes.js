@@ -27,20 +27,45 @@ module.exports = (app) => {
 }
 
 const loadUserArtists = asyncExpress(async (req, res) => {
-  const userArtists = await UserArtist.find({
-    ownerId: mongoose.Types.ObjectId(req.query.userId),
-  })
+  const userArtists = await UserArtist.find({})
+    .populate('owner')
     .lean()
     .exec()
-  const csvData = userArtists
-    .map(
-      (userArtist) =>
-        `${userArtist.name},${userArtist.popularity},${
-          userArtist.followerCount
-        },${userArtist.genres.join(',')}`
+  const fields = [
+    'Spotify Name',
+    'Spotify Email',
+    'Ranking',
+    'Artist',
+    'Popularity',
+    'Followers',
+    'Genres',
+  ]
+
+  const sortedData = _.chain(userArtists)
+    .groupBy('owner.email')
+    .map((arr) => _.sortBy(arr, 'popularity'))
+    .map((arr) => _.reverse(arr))
+    .map((arr) =>
+      _.map(arr, (userArtist, index) => ({
+        ...userArtist,
+        index: index + 1,
+      }))
     )
-    .join('\n')
-  res.send(csvData)
+    .reduce((acc, arr) => _.concat(acc, arr), [])
+    .map((userArtist) =>
+      [
+        userArtist.owner.name,
+        userArtist.owner.email,
+        userArtist.index,
+        userArtist.name,
+        userArtist.popularity,
+        userArtist.followerCount,
+        userArtist.genres.join(' '),
+      ].join(',')
+    )
+    .value()
+  sortedData.unshift(fields.join(','))
+  res.send(sortedData.join('\n'))
 })
 
 // A function to auto exchange a refresh token for a new access token

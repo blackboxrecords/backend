@@ -44,4 +44,11 @@ const UserArtistSchema = new mongoose.Schema({
   },
 })
 
+UserArtistSchema.virtual('owner', {
+  ref: 'User',
+  localField: 'ownerId',
+  foreignField: '_id',
+  justOne: true,
+})
+
 mongoose.model('UserArtist', UserArtistSchema)
