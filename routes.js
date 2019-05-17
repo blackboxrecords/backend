@@ -127,7 +127,7 @@ const authUser = asyncExpress(async (req, res) => {
       scope: data.scope,
       email: userData.email,
       name: userData.display_name,
-    }).exec()
+    })
     _syncUserArtists(created._id)
   } catch (err) {
     // Redirect to an error url
