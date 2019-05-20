@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "alias": ["spotify-connect.plug.sh"],
+  "alias": ["spotify-connect.plug.sh", "spotify-connect.blackboxrecordclub.com"],
   "env": {
     "DB_URI": "@db-uri",
     "SPOTIFY_CLIENT_ID": "@spotify-client-id",
