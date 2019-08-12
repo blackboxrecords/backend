@@ -4,7 +4,6 @@ require('./models/user')
 require('./models/user-artist')
 
 const express = require('express')
-const asyncExpress = require('async-express')
 const app = express()
 
 app.use(express.json())
@@ -15,18 +14,18 @@ app.use((req, res, next) => {
   next()
 })
 
-const mongoConnect = asyncExpress(async (req, res, next) => {
+const mongoConnect = async (req, res, next) => {
   await mongoose.connect(process.env.DB_URI, {
     connectTimeoutMS: 5000,
     useNewUrlParser: true,
   })
   next()
-})
+}
 
-const mongoDisconnect = asyncExpress(async (req, res, next) => {
+const mongoDisconnect = async (req, res, next) => {
   await mongoose.disconnect()
   next()
-})
+}
 
 app.use(mongoConnect)
 

@@ -1,7 +1,6 @@
 const mongoose = require('mongoose')
 const User = mongoose.model('User')
 const UserArtist = mongoose.model('UserArtist')
-const asyncExpress = require('async-express')
 const axios = require('axios')
 const _ = require('lodash')
 
@@ -26,7 +25,7 @@ module.exports = (app) => {
   app.get('/users/artists', loadUserArtists)
 }
 
-const loadUserArtists = asyncExpress(async (req, res) => {
+const loadUserArtists = async (req, res) => {
   const userArtists = await UserArtist.find({})
     .populate('owner')
     .lean()
@@ -66,7 +65,7 @@ const loadUserArtists = asyncExpress(async (req, res) => {
   res.set('Content-Type', 'text/csv')
   res.set('Content-Disposition', 'attachment; filename="artist-data.csv"')
   res.send(finalCSV)
-})
+}
 
 // A function to auto exchange a refresh token for a new access token
 // Probably a good idea to always assume it's expired
@@ -90,7 +89,7 @@ const loadAuthedUser = async (userId) => {
   return { ...user, accessToken: data.access_token }
 }
 
-const authUser = asyncExpress(async (req, res) => {
+const authUser = async (req, res) => {
   const { code } = req.query
   try {
     const { data } = await axios.post(
@@ -134,13 +133,13 @@ const authUser = asyncExpress(async (req, res) => {
     console.log('Error authorizing', err)
   }
   res.redirect(301, 'https://blackboxrecordclub.com/successful-connection')
-})
+}
 
-const syncUserArtists = asyncExpress(async (req, res) => {
+const syncUserArtists = async (req, res) => {
   const { userId } = req.query
   await _syncUserArtists(userId)
   res.status(204).end()
-})
+}
 
 const _syncUserArtists = async (userId) => {
   const user = await loadAuthedUser(userId)
@@ -171,7 +170,7 @@ const _syncUserArtists = async (userId) => {
   )
 }
 
-const loadUsers = asyncExpress(async (req, res) => {
+const loadUsers = async (req, res) => {
   const users = await User.find({})
     .lean()
     .exec()
@@ -182,7 +181,7 @@ const loadUsers = asyncExpress(async (req, res) => {
       email: user.email,
     }))
   )
-})
+}
 
 const testPage = (req, res) => {
   const redirectURI = encodeURIComponent(process.env.REDIRECT_URI)

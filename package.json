@@ -23,7 +23,6 @@
   },
   "homepage": "https://github.com/blackboxrecords/spotify-connect#readme",
   "dependencies": {
-    "async-express": "^0.1.4",
     "axios": "^0.18.0",
     "express": "^4.16.4",
     "mongoose": "^5.5.7"
