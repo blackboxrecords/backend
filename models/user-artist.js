@@ -42,6 +42,10 @@ const UserArtistSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  createdAt: {
+    type: Date,
+    required: true,
+  },
 })
 
 UserArtistSchema.virtual('owner', {
@@ -50,5 +54,8 @@ UserArtistSchema.virtual('owner', {
   foreignField: '_id',
   justOne: true,
 })
+
+UserArtistSchema.index({ ownerId: 1, name: 1 })
+UserArtistSchema.index({ createdAt: -1 })
 
 mongoose.model('UserArtist', UserArtistSchema)

@@ -27,6 +27,7 @@ module.exports = (app) => {
 
 const loadUserArtists = async (req, res) => {
   const userArtists = await UserArtist.find({})
+    .sort({ createdAt: -1 })
     .populate('owner')
     .lean()
     .exec()
@@ -166,6 +167,7 @@ const _syncUserArtists = async (userId) => {
       ...item,
       followerCount: item.followers.total,
       ownerId: user._id,
+      createdAt: new Date(),
     }))
   )
 }
