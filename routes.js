@@ -24,6 +24,7 @@ module.exports = (app, final) => {
   app.get('/sync', final(syncUserArtists))
   app.get('/users', final(loadUsers))
   app.get('/users/artists', final(loadUserArtists))
+  app.get('/users/artists/unheard', final(loadUnheardArtists))
   app.get('/spotify/auth', final(authRedirect))
 }
 
@@ -37,7 +38,7 @@ const loadUserArtists = async (req, res) => {
     'Spotify Name',
     'Spotify Email',
     'Ranking',
-    'Artist',
+    'Unheard Artist',
     'Popularity',
     'Followers',
     'Genres',
@@ -72,6 +73,77 @@ const loadUserArtists = async (req, res) => {
   const finalCSV = sortedData.join('\n')
   res.set('Content-Type', 'text/csv')
   res.set('Content-Disposition', 'attachment; filename="artist-data.csv"')
+  res.send(finalCSV)
+}
+
+const loadUnheardArtistsByUser = async (userId) => {
+  const userArtists = await UserArtist.find({
+    ownerId: mongoose.Types.ObjectId(userId),
+  })
+    .populate(['owner', 'artist'])
+    .sort({ createdAt: -1 })
+    .exec()
+  const relatedArtists = await RelatedArtist.find({
+    rootArtistId: {
+      $in: userArtists.map((item) => item.artist._id),
+    },
+    relatedArtistId: {
+      $nin: userArtists.map((item) => item.artist._id),
+    },
+  })
+    .limit(100)
+    .exec()
+  return Artist.find({
+    _id: {
+      $in: _.map(relatedArtists, 'relatedArtistId'),
+    },
+  })
+    .lean()
+    .exec()
+}
+
+const loadUnheardArtists = async (req, res) => {
+  const users = await User.find({}).exec()
+  const relatedArtists = await Promise.all(
+    users.map(async (user) => {
+      const artists = await loadUnheardArtistsByUser(user._id)
+      return artists.map((artist) => ({ ...artist, user }))
+    })
+  )
+  const fields = [
+    'Spotify Name',
+    'Spotify Email',
+    'Ranking',
+    'Artist',
+    'Popularity',
+    'Followers',
+    'Genres',
+  ]
+  const sortedData = _.chain(relatedArtists)
+    .map((arr) =>
+      _.map(arr, (artist, index) => ({
+        ...artist,
+        user: artist.user,
+        index: index + 1,
+      }))
+    )
+    .flatten()
+    .map((userArtist) =>
+      [
+        userArtist.user.name,
+        userArtist.user.email,
+        userArtist.index,
+        userArtist.name,
+        userArtist.popularity,
+        userArtist.followerCount,
+        (userArtist.genres || []).join(' '),
+      ].join(',')
+    )
+    .value()
+  sortedData.unshift(fields.join(','))
+  const finalCSV = sortedData.join('\n')
+  res.set('Content-Type', 'text/csv')
+  res.set('Content-Disposition', 'attachment; filename="unheard-data.csv"')
   res.send(finalCSV)
 }
 
