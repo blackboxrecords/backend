@@ -17,12 +17,12 @@ const URITransform = (data) =>
     .map((x) => `${encodeURIComponent(x[0])}=${encodeURIComponent(x[1])}`)
     .join('&')
 
-module.exports = (app) => {
-  app.get('/auth', authUser)
-  app.get('/', testPage)
-  app.get('/sync', syncUserArtists)
-  app.get('/users', loadUsers)
-  app.get('/users/artists', loadUserArtists)
+module.exports = (app, final) => {
+  app.get('/auth', final(authUser))
+  app.get('/', final(testPage))
+  app.get('/sync', final(syncUserArtists))
+  app.get('/users', final(loadUsers))
+  app.get('/users/artists', final(loadUserArtists))
 }
 
 const loadUserArtists = async (req, res) => {

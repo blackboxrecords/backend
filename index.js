@@ -15,25 +15,20 @@ app.use((req, res, next) => {
   next()
 })
 
-const mongoConnect = async (req, res, next) => {
+app.use(async (req, res, next) => {
   await mongoose.connect(process.env.DB_URI, {
     connectTimeoutMS: 5000,
     useNewUrlParser: true,
   })
   next()
-}
+})
 
-const mongoDisconnect = async (req, res, next) => {
+// Wrapper function to do cleanup
+const final = (fn) => async (...args) => {
+  await Promise.resolve(fn(...args))
   await mongoose.disconnect()
-  next()
 }
 
-app.use(mongoConnect)
-
-require('./routes')(app)
-
-if (process.env.NODE_ENV !== 'development') {
-  app.use(mongoDisconnect)
-}
+require('./routes')(app, final)
 
 module.exports = app
