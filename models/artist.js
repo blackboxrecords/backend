@@ -15,7 +15,14 @@ const ImageSchema = new mongoose.Schema({
   },
 })
 
+/**
+ * id and uri should become required after v2
+ **/
 const ArtistSchema = new mongoose.Schema({
+  id: {
+    type: String,
+    required: false,
+  },
   uri: {
     type: String,
     required: false,

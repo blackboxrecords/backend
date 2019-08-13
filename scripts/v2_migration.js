@@ -6,6 +6,9 @@ const mongoose = require('mongoose')
 const UserArtist = mongoose.model('UserArtist')
 const Artist = mongoose.model('Artist')
 
+/**
+ * Run this to get separate artist collection and simplified user/artist relation
+ **/
 try {
   ;(async () => {
     await mongoose.connect(process.env.DB_URI, {
@@ -14,12 +17,16 @@ try {
     })
     console.log('connected')
     const userArtists = await UserArtist.find({}).exec()
-    for (const _artist of userArtists) {
-      const existingArtist = await Artist.findOne({ name: _artist.name }).exec()
+    let count = 0
+    for (const userArtist of userArtists) {
+      console.log(`step ${++count} of ${userArtists.length}`)
+      const existingArtist = await Artist.findOne({
+        name: userArtist.name,
+      }).exec()
       if (existingArtist) {
         await UserArtist.findOneAndUpdate(
           {
-            _id: mongoose.Types.ObjectId(_artist._id),
+            _id: mongoose.Types.ObjectId(userArtist._id),
           },
           {
             artistId: existingArtist._id,
@@ -27,16 +34,10 @@ try {
         ).exec()
         continue
       }
-      const artist = await Artist.create({
-        name: _artist.name,
-        popularity: _artist.popularity,
-        genres: _artist.genres,
-        followerCount: _artist.followerCount,
-        images: _artist.images,
-      })
+      const artist = await Artist.create(userArtist)
       await UserArtist.findOneAndUpdate(
         {
-          _id: mongoose.Types.ObjectId(_artist._id),
+          _id: mongoose.Types.ObjectId(userArtist._id),
         },
         {
           artistId: artist._id,

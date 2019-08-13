@@ -4,6 +4,7 @@ mongoose.set('useFindAndModify', false)
 require('./models/user')
 require('./models/user-artist')
 require('./models/artist')
+require('./models/related-artist')
 
 const express = require('express')
 const app = express()

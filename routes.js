@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const User = mongoose.model('User')
 const UserArtist = mongoose.model('UserArtist')
 const Artist = mongoose.model('Artist')
+const RelatedArtist = mongoose.model('RelatedArtist')
 const axios = require('axios')
 const _ = require('lodash')
 
@@ -178,22 +179,8 @@ const _syncUserArtists = async (userId) => {
   }).exec()
   await Promise.all(
     items.map(async (item) => {
-      let artist = await Artist.findOne({
-        name: item.name,
-      }).exec()
-      if (artist && !artist.uri) {
-        await Artist.findOneAndUpdate(
-          {
-            _id: artist._id,
-          },
-          {
-            uri: item.uri,
-          }
-        )
-      }
-      if (!artist) {
-        artist = await Artist.create(item)
-      }
+      await loadRelatedArtists(userId, item)
+      const artist = findOrCreateArtist(item)
       await UserArtist.create({
         ownerId: user._id,
         createdAt: new Date(),
@@ -201,6 +188,46 @@ const _syncUserArtists = async (userId) => {
       })
     })
   )
+}
+
+const loadRelatedArtists = async (userId, artistItem) => {
+  const user = await loadAuthedUser(userId)
+  const {
+    data: { artists },
+  } = await axios.get(
+    `https://api.spotify.com/v1/artists/${artistItem.id}/related-artists`,
+    {
+      headers: {
+        Authorization: `Bearer ${user.accessToken}`,
+      },
+    }
+  )
+  const artist = await findOrCreateArtist(artistItem)
+  const promises = artists.map(async (item) => {
+    const relatedArtist = await findOrCreateArtist(item)
+    const existing = await RelatedArtist.findOne({
+      rootArtistId: mongoose.Types.ObjectId(artist._id),
+      relatedArtistId: mongoose.Types.ObjectId(relatedArtist._id),
+    })
+    if (existing) return
+    await RelatedArtist.create({
+      rootArtistId: mongoose.Types.ObjectId(artist._id),
+      relatedArtistId: mongoose.Types.ObjectId(relatedArtist._id),
+      createdAt: new Date(),
+    })
+  })
+  await Promise.all(promises)
+}
+
+async function findOrCreateArtist(artist) {
+  const existing = await Artist.findOne({
+    name: artist.name,
+  }).exec()
+  if (existing) return existing
+  return await Artist.create({
+    ...artist,
+    followerCount: artist.followers.total,
+  })
 }
 
 const loadUsers = async (req, res) => {
