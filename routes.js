@@ -19,10 +19,10 @@ const URITransform = (data) =>
 
 module.exports = (app, final) => {
   app.get('/auth', final(authUser))
-  app.get('/', final(testPage))
   app.get('/sync', final(syncUserArtists))
   app.get('/users', final(loadUsers))
   app.get('/users/artists', final(loadUserArtists))
+  app.get('/spotify/auth', final(authRedirect))
 }
 
 const loadUserArtists = async (req, res) => {
@@ -205,22 +205,12 @@ const loadUsers = async (req, res) => {
   )
 }
 
-const testPage = (req, res) => {
+const authRedirect = async (req, res) => {
   const redirectURI = encodeURIComponent(process.env.REDIRECT_URI)
   const scopes = ['user-top-read', 'user-library-read', 'user-read-email'].join(
     ' '
   )
   const clientID = process.env.SPOTIFY_CLIENT_ID
-  res.send(`
-  <html>
-    <head>
-      <title>Spotify Authentication</title>
-    </head>
-    <body>
-      <a href="https://accounts.spotify.com/authorize?client_id=${clientID}&response_type=code&redirect_uri=${redirectURI}&scope=${scopes}&show_dialog=true">
-        Link Account
-      </a>
-    </body>
-  </html>
-`)
+  const url = `https://accounts.spotify.com/authorize?client_id=${clientID}&response_type=code&redirect_uri=${redirectURI}&scope=${scopes}&show_dialog=true`
+  res.redirect(url)
 }
