@@ -46,15 +46,11 @@ const loadUserArtists = async (req, res) => {
   const sortedData = _.chain(userArtists)
     .groupBy('owner.email')
     .map((arr) =>
-      _.map(
-        arr,
-        (userArtist, index) =>
-          console.log(userArtist) || {
-            ...userArtist.artist,
-            owner: userArtist.owner,
-            index: index + 1,
-          }
-      )
+      _.map(arr, (userArtist, index) => ({
+        ...userArtist.artist,
+        owner: userArtist.owner,
+        index: index + 1,
+      }))
     )
     .reduce((acc, arr) => _.concat(acc, arr), [])
     .map((userArtist) =>
@@ -254,13 +250,14 @@ const _syncUserArtists = async (userId) => {
       $in: _.map(artists, '_id'),
     },
   }).exec()
+  const now = new Date()
   await Promise.all(
-    items.map(async (item) => {
+    items.map(async (item, index) => {
       await loadRelatedArtists(userId, item)
       const artist = await findOrCreateArtist(item)
       await UserArtist.create({
         ownerId: user._id,
-        createdAt: new Date(),
+        createdAt: new Date(+now + index),
         artistId: artist._id,
       })
     })
