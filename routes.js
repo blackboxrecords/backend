@@ -277,7 +277,8 @@ const loadRelatedArtists = async (userId, artistItem) => {
     }
   )
   const artist = await findOrCreateArtist(artistItem)
-  const promises = artists.map(async (item) => {
+  const now = new Date()
+  const promises = artists.map(async (item, index) => {
     const relatedArtist = await findOrCreateArtist(item)
     const existing = await RelatedArtist.findOne({
       rootArtistId: mongoose.Types.ObjectId(artist._id),
@@ -287,7 +288,7 @@ const loadRelatedArtists = async (userId, artistItem) => {
     return await RelatedArtist.create({
       rootArtistId: mongoose.Types.ObjectId(artist._id),
       relatedArtistId: mongoose.Types.ObjectId(relatedArtist._id),
-      createdAt: new Date(),
+      createdAt: new Date(+now + index),
     })
   })
   return await Promise.all(promises)
