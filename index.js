@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 mongoose.set('useCreateIndex', true)
+mongoose.set('useFindAndModify', false)
 require('./models/user')
 require('./models/user-artist')
 

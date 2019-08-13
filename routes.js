@@ -139,6 +139,14 @@ const authUser = async (req, res) => {
 const syncUserArtists = async (req, res) => {
   const { userId } = req.query
   await _syncUserArtists(userId)
+  await User.findOneAndUpdate(
+    {
+      _id: mongoose.Types.ObjectId(userId),
+    },
+    {
+      lastSynced: new Date(),
+    }
+  )
   res.status(204).end()
 }
 
@@ -181,6 +189,7 @@ const loadUsers = async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      lastSynced: user.lastSynced,
     }))
   )
 }

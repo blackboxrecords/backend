@@ -21,6 +21,10 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+  lastSynced: {
+    type: Date,
+    required: false,
+  },
 })
 
 mongoose.model('User', UserSchema)
