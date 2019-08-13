@@ -181,6 +181,17 @@ const _syncUserArtists = async (userId) => {
 }
 
 const loadUsers = async (req, res) => {
+  if (req.query.id) {
+    const user = await User.findOne({
+      _id: mongoose.Types.ObjectId(req.query.id),
+    }).exec()
+    return res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      lastSynced: user.lastSynced,
+    })
+  }
   const users = await User.find({})
     .lean()
     .exec()
