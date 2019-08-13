@@ -91,7 +91,7 @@ const loadUnheardArtistsByUser = async (userId) => {
       $nin: userArtists.map((item) => item.artist._id),
     },
   })
-    .limit(100)
+    .limit(50)
     .exec()
   return Artist.find({
     _id: {
