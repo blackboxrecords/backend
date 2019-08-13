@@ -46,13 +46,20 @@ const UserArtistSchema = new mongoose.Schema({
   },
   artistId: {
     type: mongoose.Types.ObjectId,
-    required: false,
+    required: true,
   },
 })
 
 UserArtistSchema.virtual('owner', {
   ref: 'User',
   localField: 'ownerId',
+  foreignField: '_id',
+  justOne: true,
+})
+
+UserArtistSchema.virtual('artist', {
+  ref: 'Artist',
+  localField: 'artistId',
   foreignField: '_id',
   justOne: true,
 })

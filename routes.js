@@ -30,7 +30,7 @@ module.exports = (app, final) => {
 const loadUserArtists = async (req, res) => {
   const userArtists = await UserArtist.find({})
     .sort({ createdAt: -1 })
-    .populate('owner')
+    .populate(['artist', 'owner'])
     .lean()
     .exec()
   const fields = [
@@ -45,10 +45,15 @@ const loadUserArtists = async (req, res) => {
   const sortedData = _.chain(userArtists)
     .groupBy('owner.email')
     .map((arr) =>
-      _.map(arr, (userArtist, index) => ({
-        ...userArtist,
-        index: index + 1,
-      }))
+      _.map(
+        arr,
+        (userArtist, index) =>
+          console.log(userArtist) || {
+            ...userArtist.artist,
+            owner: userArtist.owner,
+            index: index + 1,
+          }
+      )
     )
     .reduce((acc, arr) => _.concat(acc, arr), [])
     .map((userArtist) =>
@@ -59,7 +64,7 @@ const loadUserArtists = async (req, res) => {
         userArtist.name,
         userArtist.popularity,
         userArtist.followerCount,
-        userArtist.genres.join(' '),
+        (userArtist.genres || []).join(' '),
       ].join(',')
     )
     .value()
@@ -180,7 +185,7 @@ const _syncUserArtists = async (userId) => {
   await Promise.all(
     items.map(async (item) => {
       await loadRelatedArtists(userId, item)
-      const artist = findOrCreateArtist(item)
+      const artist = await findOrCreateArtist(item)
       await UserArtist.create({
         ownerId: user._id,
         createdAt: new Date(),
@@ -209,14 +214,14 @@ const loadRelatedArtists = async (userId, artistItem) => {
       rootArtistId: mongoose.Types.ObjectId(artist._id),
       relatedArtistId: mongoose.Types.ObjectId(relatedArtist._id),
     })
-    if (existing) return
-    await RelatedArtist.create({
+    if (existing) return existing
+    return await RelatedArtist.create({
       rootArtistId: mongoose.Types.ObjectId(artist._id),
       relatedArtistId: mongoose.Types.ObjectId(relatedArtist._id),
       createdAt: new Date(),
     })
   })
-  await Promise.all(promises)
+  return await Promise.all(promises)
 }
 
 async function findOrCreateArtist(artist) {
