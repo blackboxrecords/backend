@@ -3,6 +3,7 @@ mongoose.set('useCreateIndex', true)
 mongoose.set('useFindAndModify', false)
 require('./models/user')
 require('./models/user-artist')
+require('./models/artist')
 
 const express = require('express')
 const app = express()

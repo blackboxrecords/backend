@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const User = mongoose.model('User')
 const UserArtist = mongoose.model('UserArtist')
+const Artist = mongoose.model('Artist')
 const axios = require('axios')
 const _ = require('lodash')
 
@@ -164,19 +165,41 @@ const _syncUserArtists = async (userId) => {
     }
   )
   const { items } = data
-  await UserArtist.deleteMany({
-    ownerId: mongoose.Types.ObjectId(user._id),
+  const artists = await Artist.find({
     name: {
       $in: _.map(items, 'name'),
     },
   }).exec()
-  await UserArtist.create(
-    _.map(items, (item) => ({
-      ...item,
-      followerCount: item.followers.total,
-      ownerId: user._id,
-      createdAt: new Date(),
-    }))
+  await UserArtist.deleteMany({
+    ownerId: mongoose.Types.ObjectId(user._id),
+    artistId: {
+      $in: _.map(artists, '_id'),
+    },
+  }).exec()
+  await Promise.all(
+    items.map(async (item) => {
+      let artist = await Artist.findOne({
+        name: item.name,
+      }).exec()
+      if (artist && !artist.uri) {
+        await Artist.findOneAndUpdate(
+          {
+            _id: artist._id,
+          },
+          {
+            uri: item.uri,
+          }
+        )
+      }
+      if (!artist) {
+        artist = await Artist.create(item)
+      }
+      await UserArtist.create({
+        ownerId: user._id,
+        createdAt: new Date(),
+        artistId: artist._id,
+      })
+    })
   )
 }
 

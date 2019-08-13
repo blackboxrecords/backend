@@ -22,29 +22,31 @@ const UserArtistSchema = new mongoose.Schema({
   },
   images: {
     type: [ImageSchema],
-    default: [],
-    required: true,
+    required: false,
   },
   name: {
     type: String,
-    required: true,
+    required: false,
   },
   popularity: {
     type: Number,
-    required: true,
+    required: false,
   },
   genres: {
     type: [String],
-    default: [],
-    required: true,
+    required: false,
   },
   followerCount: {
     type: Number,
-    required: true,
+    required: false,
   },
   createdAt: {
     type: Date,
     required: true,
+  },
+  artistId: {
+    type: mongoose.Types.ObjectId,
+    required: false,
   },
 })
 
