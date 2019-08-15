@@ -93,6 +93,7 @@ const loadRelatedArtists = async (req, res) => {
     'Ranking',
     'Artist',
     'Related Artist',
+    'Repeats',
     'Popularity',
     'Followers',
     'Genres',
@@ -110,6 +111,7 @@ const loadRelatedArtists = async (req, res) => {
         relatedArtist.rootArtist.rank,
         relatedArtist.rootArtist.name,
         relatedArtist.name,
+        relatedArtist.referenceCount,
         relatedArtist.popularity,
         relatedArtist.followerCount,
         (relatedArtist.genres || []).join(' '),
@@ -154,9 +156,14 @@ const _loadRelatedArtistsByUser = async (userId) => {
   return _.chain(relatedArtists)
     .uniqBy((relatedArtist) => relatedArtist.relatedArtistId.toString())
     .slice(0, 50)
-    .map((artist) => ({
-      ...artist.relatedArtist,
-      rootArtist: rankedArtistById[artist.rootArtist._id] || artist.rootArtist,
+    .map((relatedArtist) => ({
+      ...relatedArtist.relatedArtist,
+      rootArtist:
+        rankedArtistById[relatedArtist.rootArtist._id] ||
+        relatedArtist.rootArtist,
+      referenceCount: _.countBy(relatedArtists, (a) => a.relatedArtistId)[
+        relatedArtist.relatedArtistId
+      ],
     }))
     .value()
 }
