@@ -92,7 +92,7 @@ const loadRelatedArtists = async (req, res) => {
     'Spotify Email',
     'Ranking',
     'Artist',
-    'Unheard Artist',
+    'Related Artist',
     'Popularity',
     'Followers',
     'Genres',
@@ -149,11 +149,14 @@ const _loadRelatedArtistsByUser = async (userId) => {
     },
   })
     .populate(['rootArtist', 'relatedArtist'])
-    .limit(50)
     .lean()
     .exec()
-  return _.map(relatedArtists, (artist) => ({
-    ...artist.relatedArtist,
-    rootArtist: rankedArtistById[artist.rootArtist._id] || artist.rootArtist,
-  }))
+  return _.chain(relatedArtists)
+    .uniqBy((relatedArtist) => relatedArtist.relatedArtistId.toString())
+    .slice(0, 50)
+    .map((artist) => ({
+      ...artist.relatedArtist,
+      rootArtist: rankedArtistById[artist.rootArtist._id] || artist.rootArtist,
+    }))
+    .value()
 }
