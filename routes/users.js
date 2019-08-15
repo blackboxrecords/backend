@@ -1,7 +1,6 @@
 const mongoose = require('mongoose')
 const User = mongoose.model('User')
 const UserArtist = mongoose.model('UserArtist')
-const Artist = mongoose.model('Artist')
 const RelatedArtist = mongoose.model('RelatedArtist')
 const _ = require('lodash')
 
