@@ -31,6 +31,6 @@ const final = (fn) => async (...args) => {
   await mongoose.disconnect()
 }
 
-require('./routes')(app, final)
+require('./routes/redirect')(app, final)
 
 module.exports = app
