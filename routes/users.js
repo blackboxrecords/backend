@@ -8,7 +8,7 @@ const _ = require('lodash')
 module.exports = (app, final) => {
   app.get('/users', final(loadUsers))
   app.get('/users/artists', final(loadUserArtists))
-  app.get('/users/artists/unheard', final(loadUnheardArtists))
+  app.get('/users/artists/related', final(loadRelatedArtists))
 }
 
 const loadUsers = async (req, res) => {
@@ -80,11 +80,11 @@ const loadUserArtists = async (req, res) => {
   res.send(finalCSV)
 }
 
-const loadUnheardArtists = async (req, res) => {
+const loadRelatedArtists = async (req, res) => {
   const users = await User.find({}).exec()
   const relatedArtists = await Promise.all(
     users.map(async (user) => {
-      const artists = await _loadUnheardArtistsByUser(user._id)
+      const artists = await _loadRelatedArtistsByUser(user._id)
       return artists.map((artist) => ({ ...artist, user }))
     })
   )
@@ -99,19 +99,16 @@ const loadUnheardArtists = async (req, res) => {
     'Genres',
   ]
   const sortedData = _.chain(relatedArtists)
-    .map((arr) =>
-      _.map(arr, (artist, index) => ({
-        ...artist,
-        user: artist.user,
-        index: index + 1,
-      }))
-    )
     .flatten()
+    .map((artist) => ({
+      ...artist,
+      user: artist.user,
+    }))
     .map((relatedArtist) =>
       [
         relatedArtist.user.name,
         relatedArtist.user.email,
-        relatedArtist.index,
+        relatedArtist.rootArtist.rank,
         relatedArtist.rootArtist.name,
         relatedArtist.name,
         relatedArtist.popularity,
@@ -123,18 +120,27 @@ const loadUnheardArtists = async (req, res) => {
   sortedData.unshift(fields.join(','))
   const finalCSV = sortedData.join('\n')
   res.set('Content-Type', 'text/csv')
-  res.set('Content-Disposition', 'attachment; filename="unheard-data.csv"')
+  res.set('Content-Disposition', 'attachment; filename="related-data.csv"')
   res.send(finalCSV)
 }
 
-const _loadUnheardArtistsByUser = async (userId) => {
+const _loadRelatedArtistsByUser = async (userId) => {
   const userArtists = await UserArtist.find({
     ownerId: mongoose.Types.ObjectId(userId),
   })
     .populate(['artist'])
     .sort({ createdAt: -1 })
     .limit(15)
+    .lean()
     .exec()
+  const rankedArtistById = _.chain(userArtists)
+    .map('artist')
+    .map((artist, index) => ({
+      ...artist,
+      rank: index + 1,
+    }))
+    .keyBy((artist) => artist._id.toString())
+    .value()
   const relatedArtists = await RelatedArtist.find({
     rootArtistId: {
       $in: userArtists.map((item) => item.artist._id),
@@ -149,6 +155,6 @@ const _loadUnheardArtistsByUser = async (userId) => {
     .exec()
   return _.map(relatedArtists, (artist) => ({
     ...artist.relatedArtist,
-    rootArtist: artist.rootArtist,
+    rootArtist: rankedArtistById[artist.rootArtist._id] || artist.rootArtist,
   }))
 }
