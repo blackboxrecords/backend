@@ -131,6 +131,7 @@ const _loadUnheardArtistsByUser = async (userId) => {
   })
     .populate(['owner', 'artist'])
     .sort({ createdAt: -1 })
+    .limit(15)
     .exec()
   const relatedArtists = await RelatedArtist.find({
     rootArtistId: {
