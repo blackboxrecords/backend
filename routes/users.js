@@ -92,6 +92,7 @@ const loadUnheardArtists = async (req, res) => {
     'Spotify Name',
     'Spotify Email',
     'Ranking',
+    'Artist',
     'Unheard Artist',
     'Popularity',
     'Followers',
@@ -106,15 +107,16 @@ const loadUnheardArtists = async (req, res) => {
       }))
     )
     .flatten()
-    .map((userArtist) =>
+    .map((relatedArtist) =>
       [
-        userArtist.user.name,
-        userArtist.user.email,
-        userArtist.index,
-        userArtist.name,
-        userArtist.popularity,
-        userArtist.followerCount,
-        (userArtist.genres || []).join(' '),
+        relatedArtist.user.name,
+        relatedArtist.user.email,
+        relatedArtist.index,
+        relatedArtist.rootArtist.name,
+        relatedArtist.name,
+        relatedArtist.popularity,
+        relatedArtist.followerCount,
+        (relatedArtist.genres || []).join(' '),
       ].join(',')
     )
     .value()
@@ -129,7 +131,7 @@ const _loadUnheardArtistsByUser = async (userId) => {
   const userArtists = await UserArtist.find({
     ownerId: mongoose.Types.ObjectId(userId),
   })
-    .populate(['owner', 'artist'])
+    .populate(['artist'])
     .sort({ createdAt: -1 })
     .limit(15)
     .exec()
@@ -141,13 +143,12 @@ const _loadUnheardArtistsByUser = async (userId) => {
       $nin: userArtists.map((item) => item.artist._id),
     },
   })
+    .populate(['rootArtist', 'relatedArtist'])
     .limit(50)
-    .exec()
-  return Artist.find({
-    _id: {
-      $in: _.map(relatedArtists, 'relatedArtistId'),
-    },
-  })
     .lean()
     .exec()
+  return _.map(relatedArtists, (artist) => ({
+    ...artist.relatedArtist,
+    rootArtist: artist.rootArtist,
+  }))
 }

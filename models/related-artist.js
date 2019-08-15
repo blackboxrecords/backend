@@ -15,4 +15,18 @@ const RelatedArtistSchema = new mongoose.Schema({
   },
 })
 
+RelatedArtistSchema.virtual('rootArtist', {
+  ref: 'Artist',
+  localField: 'rootArtistId',
+  foreignField: '_id',
+  justOne: true,
+})
+
+RelatedArtistSchema.virtual('relatedArtist', {
+  ref: 'Artist',
+  localField: 'relatedArtistId',
+  foreignField: '_id',
+  justOne: true,
+})
+
 mongoose.model('RelatedArtist', RelatedArtistSchema)
