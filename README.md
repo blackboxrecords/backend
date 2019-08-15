@@ -1,3 +1,3 @@
-# spotify-connect
+# backend
 
-A web page for handling spotify account oauths
+The backend logic for the black box records music records management system
