@@ -32,5 +32,7 @@ const final = (fn) => async (...args) => {
 }
 
 require('./routes/redirect')(app, final)
+require('./routes/auth')(app, final)
+require('./routes/users')(app, final)
 
 module.exports = app
