@@ -40,4 +40,6 @@ require('./routes/redirect')(app, final)
 require('./routes/auth')(app, final)
 require('./routes/users')(app, final)
 
+app.get('/ping', (req, res) => res.send('pong'))
+
 module.exports = app
