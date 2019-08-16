@@ -142,12 +142,13 @@ const _loadRelatedArtistsByUser = async (userId) => {
     }))
     .keyBy((artist) => (artist._id || '').toString())
     .value()
+  const _ids = userArtists.map((item) => item.artist._id)
   const relatedArtists = await RelatedArtist.find({
     rootArtistId: {
-      $in: userArtists.map((item) => item.artist._id),
+      $in: _ids,
     },
     relatedArtistId: {
-      $nin: userArtists.map((item) => item.artist._id),
+      $nin: _ids,
     },
   })
     .populate(['rootArtist', 'relatedArtist'])
@@ -176,9 +177,6 @@ const _loadRelatedArtistsByUser = async (userId) => {
       rootArtist:
         rankedArtistById[relatedArtist.rootArtist._id] ||
         relatedArtist.rootArtist,
-      referenceCount: _.countBy(relatedArtists, (a) => a.relatedArtistId)[
-        relatedArtist.relatedArtistId
-      ],
     }))
     .value()
 }
