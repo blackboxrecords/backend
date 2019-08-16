@@ -132,6 +132,8 @@ const _loadRelatedArtistsByUser = async (userId) => {
     .limit(15)
     .lean()
     .exec()
+  // Guard against unsynced artists
+  if (_.find(userArtists, (userArtist) => !userArtist.artist)) return []
   const rankedArtistById = _.chain(userArtists)
     .map('artist')
     .map((artist, index) => ({
