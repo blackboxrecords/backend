@@ -116,7 +116,7 @@ const loadRelatedArtists = async (req, res) => {
       ].join()
     )
     .value()
-  sortedData.unshift(fields.join(','))
+  sortedData.unshift(fields.join())
   const finalCSV = sortedData.join('\n')
   res.set('Content-Type', 'text/csv')
   res.set('Content-Disposition', 'attachment; filename="related-data.csv"')
