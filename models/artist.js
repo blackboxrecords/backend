@@ -22,7 +22,7 @@ const ArtistSchema = new mongoose.Schema({
   id: {
     type: String,
     required: false,
-    unique: true,
+    unique: false,
   },
   uri: {
     type: String,

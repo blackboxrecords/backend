@@ -5,6 +5,7 @@ require('dotenv').config({})
 const mongoose = require('mongoose')
 const UserArtist = mongoose.model('UserArtist')
 const Artist = mongoose.model('Artist')
+const ParallelPromise = require('@jchancehud/parallel-promise')
 
 /**
  * Run this to get separate artist collection and simplified user/artist relation
@@ -16,36 +17,41 @@ const Artist = mongoose.model('Artist')
   })
   console.log('connected')
   const userArtists = await UserArtist.find({}).exec()
-  let count = 0
-  for (const userArtist of userArtists) {
-    console.log(`step ${++count} of ${userArtists.length}`)
-    const existingArtist = await Artist.findOne({
+  const promiseByName = {}
+  const createOrLoadArtistByName = async (name, data) => {
+    if (promiseByName[name]) return promiseByName[name]
+    promiseByName[name] = Promise.resolve().then(async () => {
+      const existingArtist = await Artist.findOne({
+        name,
+      }).exec()
+      if (existingArtist) return existingArtist
+      return await Artist.create(data)
+    })
+    return await promiseByName[name]
+  }
+  await ParallelPromise(userArtists.length, async (i) => {
+    const userArtist = userArtists[i]
+    console.log(`step ${i} of ${userArtists.length}`)
+    if (userArtist.artistId) return
+    const artist = createOrLoadArtistByName(userArtist.name, {
+      genres: userArtist.genres,
+      images: userArtist.images,
       name: userArtist.name,
-    }).exec()
-    if (existingArtist) {
-      await UserArtist.findOneAndUpdate(
-        {
-          _id: mongoose.Types.ObjectId(userArtist._id),
-        },
-        {
-          artistId: existingArtist._id,
-        }
-      ).exec()
-      continue
-    }
-    const artist = await Artist.create(userArtist)
-    await UserArtist.findOneAndUpdate(
+      popularity: userArtist.popularity,
+      followerCount: userArtist.followerCount,
+    })
+    await UserArtist.updateOne(
       {
-        _id: mongoose.Types.ObjectId(userArtist._id),
+        _id: userArtist._id,
       },
       {
         artistId: artist._id,
       }
     )
-  }
-  process.exit()
+  })
 })()
   .then(() => console.log('v2 migration completed, exiting'))
+  .then(() => process.exit(0))
   .catch((err) => {
     console.log('Error in migration!', err)
     process.exit(1)
