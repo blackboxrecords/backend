@@ -93,17 +93,28 @@ const authUser = async (req, res) => {
 }
 
 const syncUserArtists = async (req, res) => {
-  const { userId } = req.query
-  await _syncUserArtists(userId)
-  await User.findOneAndUpdate(
-    {
-      _id: mongoose.Types.ObjectId(userId),
-    },
-    {
-      lastSynced: new Date(),
-    }
-  )
-  res.status(204).end()
+  try {
+    const { userId } = req.query
+    await _syncUserArtists(userId)
+    const user = await User.findOneAndUpdate(
+      {
+        _id: mongoose.Types.ObjectId(userId),
+      },
+      {
+        lastSynced: new Date(),
+      }
+    )
+      .lean()
+      .exec()
+    res.json({
+      ...user,
+      refreshToken: '',
+      scope: '',
+    })
+  } catch (err) {
+    console.log('Error syncing user artists', err)
+    throw err
+  }
 }
 
 const _syncUserArtists = async (userId) => {
