@@ -90,10 +90,9 @@ const loadRelatedArtists = async (req, res) => {
   const fields = [
     'Spotify Name',
     'Spotify Email',
-    'Ranking',
-    'Artist',
+    'Artist Rank(s)',
+    'Artist(s)',
     'Related Artist',
-    'Repeats',
     'Popularity',
     'Followers',
     'Genres',
@@ -108,14 +107,13 @@ const loadRelatedArtists = async (req, res) => {
       [
         relatedArtist.user.name,
         relatedArtist.user.email,
-        relatedArtist.rootArtist.rank,
-        relatedArtist.rootArtist.name,
+        `"${_.map(relatedArtist.rootArtists, 'rank').join()}"`,
+        `"${_.map(relatedArtist.rootArtists, 'name').join()}"`,
         relatedArtist.name,
-        relatedArtist.referenceCount,
         relatedArtist.popularity,
         relatedArtist.followerCount,
         (relatedArtist.genres || []).join(' '),
-      ].join(',')
+      ].join()
     )
     .value()
   sortedData.unshift(fields.join(','))
@@ -153,11 +151,26 @@ const _loadRelatedArtistsByUser = async (userId) => {
     .populate(['rootArtist', 'relatedArtist'])
     .lean()
     .exec()
+  const groupedRootArtists = _.chain(relatedArtists)
+    .map((_relatedArtist) => ({
+      ..._relatedArtist,
+      rootArtist:
+        rankedArtistById[_relatedArtist.rootArtistId.toString()] ||
+        _relatedArtist,
+    }))
+    .groupBy('relatedArtistId')
+    .forEach((_relatedArtists, id, obj) =>
+      Object.assign(obj, {
+        [id]: _.map(_relatedArtists, 'rootArtist'),
+      })
+    )
+    .value()
   return _.chain(relatedArtists)
     .uniqBy((relatedArtist) => relatedArtist.relatedArtistId.toString())
     .slice(0, 50)
     .map((relatedArtist) => ({
       ...relatedArtist.relatedArtist,
+      rootArtists: groupedRootArtists[relatedArtist.relatedArtistId],
       rootArtist:
         rankedArtistById[relatedArtist.rootArtist._id] ||
         relatedArtist.rootArtist,
