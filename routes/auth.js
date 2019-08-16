@@ -138,7 +138,7 @@ const _syncUserArtists = async (userId) => {
       const artist = await findOrCreateArtist(item)
       await UserArtist.create({
         ownerId: user._id,
-        createdAt: new Date(+now + index),
+        createdAt: new Date(+now - index),
         artistId: artist._id,
       })
     })
@@ -169,7 +169,7 @@ const loadRelatedArtists = async (userId, artistItem) => {
     return await RelatedArtist.create({
       rootArtistId: mongoose.Types.ObjectId(artist._id),
       relatedArtistId: mongoose.Types.ObjectId(relatedArtist._id),
-      createdAt: new Date(+now + index),
+      createdAt: new Date(+now - index),
     })
   })
   return await Promise.all(promises)
