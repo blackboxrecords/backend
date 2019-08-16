@@ -29,4 +29,6 @@ RelatedArtistSchema.virtual('relatedArtist', {
   justOne: true,
 })
 
+RelatedArtistSchema.index({ rootArtistId: -1, relatedArtistId: -1 })
+
 mongoose.model('RelatedArtist', RelatedArtistSchema)
