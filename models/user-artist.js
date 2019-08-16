@@ -1,44 +1,9 @@
 const mongoose = require('mongoose')
 
-const ImageSchema = new mongoose.Schema({
-  height: {
-    type: Number,
-    required: true,
-  },
-  width: {
-    type: Number,
-    required: true,
-  },
-  url: {
-    type: String,
-    required: true,
-  },
-})
-
 const UserArtistSchema = new mongoose.Schema({
   ownerId: {
     type: mongoose.Types.ObjectId,
     required: true,
-  },
-  images: {
-    type: [ImageSchema],
-    required: false,
-  },
-  name: {
-    type: String,
-    required: false,
-  },
-  popularity: {
-    type: Number,
-    required: false,
-  },
-  genres: {
-    type: [String],
-    required: false,
-  },
-  followerCount: {
-    type: Number,
-    required: false,
   },
   createdAt: {
     type: Date,

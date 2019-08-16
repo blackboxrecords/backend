@@ -138,7 +138,7 @@ const _loadRelatedArtistsByUser = async (userId) => {
       ...artist,
       rank: index + 1,
     }))
-    .keyBy((artist) => artist._id.toString())
+    .keyBy((artist) => (artist._id || '').toString())
     .value()
   const relatedArtists = await RelatedArtist.find({
     rootArtistId: {

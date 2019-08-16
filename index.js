@@ -17,17 +17,22 @@ app.use((req, res, next) => {
   next()
 })
 
+let connectingPromise
 app.use(async (req, res, next) => {
-  await mongoose.connect(process.env.DB_URI, {
-    connectTimeoutMS: 5000,
-    useNewUrlParser: true,
-  })
+  connectingPromise =
+    connectingPromise ||
+    (await mongoose.connect(process.env.DB_URI, {
+      connectTimeoutMS: 5000,
+      useNewUrlParser: true,
+    }))
+  await connectingPromise
   next()
 })
 
 // Wrapper function to do cleanup
 const final = (fn) => async (...args) => {
   await Promise.resolve(fn(...args))
+  if (process.env.NODE_ENV === 'development') return
   await mongoose.disconnect()
 }
 
