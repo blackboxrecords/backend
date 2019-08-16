@@ -30,6 +30,7 @@ UserArtistSchema.virtual('artist', {
 })
 
 UserArtistSchema.index({ ownerId: 1, name: 1 })
-UserArtistSchema.index({ createdAt: -1, artistId: -1 })
+UserArtistSchema.index({ ownerId: 1, createdAt: -1 })
+UserArtistSchema.index({ createdAt: -1 })
 
 mongoose.model('UserArtist', UserArtistSchema)
