@@ -129,7 +129,7 @@ const _loadRelatedArtistsByUser = async (userId) => {
   })
     .populate(['artist'])
     .sort({ createdAt: -1 })
-    .limit(15)
+    .limit(25)
     .lean()
     .exec()
   // Guard against unsynced artists
