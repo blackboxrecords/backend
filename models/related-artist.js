@@ -13,6 +13,10 @@ const RelatedArtistSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  updatedAt: {
+    type: Date,
+    required: false,
+  },
 })
 
 RelatedArtistSchema.virtual('rootArtist', {
@@ -31,5 +35,6 @@ RelatedArtistSchema.virtual('relatedArtist', {
 
 RelatedArtistSchema.index({ rootArtistId: -1 })
 RelatedArtistSchema.index({ relatedArtistId: -1 })
+RelatedArtistSchema.index({ updatedAt: -1 })
 
 mongoose.model('RelatedArtist', RelatedArtistSchema)

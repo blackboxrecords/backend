@@ -109,7 +109,7 @@ const loadRelatedArtists = async (req, res) => {
         relatedArtist.user.email,
         `"${_.map(relatedArtist.rootArtists, 'rank').join()}"`,
         `"${_.map(relatedArtist.rootArtists, 'name').join()}"`,
-        relatedArtist.name,
+        `"${relatedArtist.name.replace('"', '""""')}"`,
         relatedArtist.popularity,
         relatedArtist.followerCount,
         (relatedArtist.genres || []).join(' '),
@@ -124,16 +124,14 @@ const loadRelatedArtists = async (req, res) => {
 }
 
 const _loadRelatedArtistsByUser = async (userId) => {
-  const userArtists = await UserArtist.find({
+  const userArtists = (await UserArtist.find({
     ownerId: mongoose.Types.ObjectId(userId),
   })
     .populate(['artist'])
     .sort({ createdAt: -1 })
     .limit(25)
     .lean()
-    .exec()
-  // Guard against unsynced artists
-  if (_.find(userArtists, (userArtist) => !userArtist.artist)) return []
+    .exec()).filter((obj) => !!obj.artist)
   const rankedArtistById = _.chain(userArtists)
     .map('artist')
     .map((artist, index) => ({
@@ -151,6 +149,7 @@ const _loadRelatedArtistsByUser = async (userId) => {
       $nin: _ids,
     },
   })
+    .sort({ updatedAt: -1 })
     .populate(['rootArtist', 'relatedArtist'])
     .lean()
     .exec()
@@ -169,7 +168,7 @@ const _loadRelatedArtistsByUser = async (userId) => {
     )
     .value()
   return _.chain(relatedArtists)
-    .uniqBy((relatedArtist) => relatedArtist.relatedArtistId.toString())
+    .uniqBy('relatedArtist._id')
     .slice(0, 50)
     .map((relatedArtist) => ({
       ...relatedArtist.relatedArtist,

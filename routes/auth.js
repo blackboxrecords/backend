@@ -207,11 +207,22 @@ const loadRelatedArtists = async (userId, artistItem) => {
       rootArtistId: mongoose.Types.ObjectId(artist._id),
       relatedArtistId: mongoose.Types.ObjectId(relatedArtist._id),
     })
-    if (existing) return existing
+    if (existing) {
+      await RelatedArtist.updateOne(
+        {
+          _id: existing._id,
+        },
+        {
+          updatedAt: now,
+        }
+      )
+      return existing
+    }
     return await RelatedArtist.create({
       rootArtistId: mongoose.Types.ObjectId(artist._id),
       relatedArtistId: mongoose.Types.ObjectId(relatedArtist._id),
       createdAt: new Date(+now - index),
+      updatedAt: new Date(+now - index),
     })
   })
   return await Promise.all(promises)
