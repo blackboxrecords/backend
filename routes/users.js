@@ -36,11 +36,11 @@ const loadUsers = async (req, res) => {
 }
 
 const loadUserArtists = async (req, res) => {
-  const userArtists = await UserArtist.find({})
+  const userArtists = (await UserArtist.find({})
     .sort({ createdAt: -1 })
     .populate(['artist', 'owner'])
     .lean()
-    .exec()
+    .exec()).filter((obj) => !!obj.artist)
   const fields = [
     'Spotify Name',
     'Spotify Email',
