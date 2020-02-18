@@ -17,28 +17,17 @@ app.use((req, res, next) => {
   next()
 })
 
-let connectingPromise
 app.use(async (req, res, next) => {
-  connectingPromise =
-    connectingPromise ||
-    (await mongoose.connect(process.env.DB_URI, {
-      connectTimeoutMS: 5000,
-      useNewUrlParser: true,
-    }))
-  await connectingPromise
+  await mongoose.connect(process.env.DB_URI, {
+    connectTimeoutMS: 5000,
+    useNewUrlParser: true,
+  })
   next()
 })
 
-// Wrapper function to do cleanup
-const final = (fn) => async (...args) => {
-  await Promise.resolve(fn(...args))
-  if (process.env.NODE_ENV === 'development') return
-  await mongoose.disconnect()
-}
-
-require('./routes/redirect')(app, final)
-require('./routes/auth')(app, final)
-require('./routes/users')(app, final)
+require('./routes/redirect')(app)
+require('./routes/auth')(app)
+require('./routes/users')(app)
 
 app.get('/ping', (req, res) => res.send('pong'))
 

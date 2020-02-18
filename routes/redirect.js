@@ -1,5 +1,5 @@
-module.exports = (app, final) => {
-  app.get('/spotify/auth', final(authRedirect))
+module.exports = (app) => {
+  app.get('/spotify/auth', authRedirect)
 }
 
 const authRedirect = async (req, res) => {

@@ -4,10 +4,10 @@ const UserArtist = mongoose.model('UserArtist')
 const RelatedArtist = mongoose.model('RelatedArtist')
 const _ = require('lodash')
 
-module.exports = (app, final) => {
-  app.get('/users', final(loadUsers))
-  app.get('/users/artists', final(loadUserArtists))
-  app.get('/users/artists/related', final(loadRelatedArtists))
+module.exports = (app) => {
+  app.get('/users', loadUsers)
+  app.get('/users/artists', loadUserArtists)
+  app.get('/users/artists/related', loadRelatedArtists)
 }
 
 const loadUsers = async (req, res) => {

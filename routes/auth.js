@@ -19,9 +19,9 @@ const URITransform = (data) =>
     .map((x) => `${encodeURIComponent(x[0])}=${encodeURIComponent(x[1])}`)
     .join('&')
 
-module.exports = (app, final) => {
-  app.get('/auth', final(authUser))
-  app.get('/sync', final(syncUserArtists))
+module.exports = (app) => {
+  app.get('/auth', authUser)
+  app.get('/sync', syncUserArtists)
 }
 
 const guardedSpotifyLoad = async (fn) => {
