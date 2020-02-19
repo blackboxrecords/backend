@@ -128,16 +128,12 @@ const _loadRelatedArtistsByUser = async (userId) => {
     ownerId: mongoose.Types.ObjectId(userId),
   })
     .populate(['artist'])
-    .sort({ createdAt: -1 })
+    .sort({ rank: 1 })
     .limit(25)
     .lean()
     .exec()).filter((obj) => !!obj.artist)
   const rankedArtistById = _.chain(userArtists)
     .map('artist')
-    .map((artist, index) => ({
-      ...artist,
-      rank: index + 1,
-    }))
     .keyBy((artist) => (artist._id || '').toString())
     .value()
   const _ids = userArtists.map((item) => item.artist._id)
