@@ -3,36 +3,12 @@ const User = mongoose.model('User')
 const UserArtist = mongoose.model('UserArtist')
 const Artist = mongoose.model('Artist')
 const RelatedArtist = mongoose.model('RelatedArtist')
-const axios = require('axios')
+const Spotify = require('../spotify-sync')
 const _ = require('lodash')
-
-axios.defaults.headers.post['Content-Type'] =
-  'application/x-www-form-urlencoded'
-const AuthString = `${process.env.SPOTIFY_CLIENT_ID}:${
-  process.env.SPOTIFY_CLIENT_SECRET
-}`
-axios.defaults.headers.post.Authorization = `Basic ${Buffer.from(
-  AuthString
-).toString('base64')}`
-const URITransform = (data) =>
-  Object.entries(data)
-    .map((x) => `${encodeURIComponent(x[0])}=${encodeURIComponent(x[1])}`)
-    .join('&')
 
 module.exports = (app) => {
   app.get('/auth', authUser)
   app.get('/sync', syncUserArtists)
-}
-
-const guardedSpotifyLoad = async (fn) => {
-  try {
-    return await fn()
-  } catch (err) {
-    if (_.get(err, 'response.status') !== 429) throw err
-    const retryInterval = _.get(err, 'response.headers.retry-after', 2)
-    await new Promise((r) => setTimeout(r, (retryInterval + 5) * 1000))
-    return await fn()
-  }
 }
 
 // A function to auto exchange a refresh token for a new access token
@@ -44,44 +20,15 @@ const loadAuthedUser = async (userId) => {
     .lean()
     .exec()
   if (!user) throw new Error('No user found for id', userId)
-  const { data } = await guardedSpotifyLoad(() =>
-    axios.post(
-      'https://accounts.spotify.com/api/token',
-      {
-        grant_type: 'refresh_token',
-        refresh_token: user.refreshToken,
-      },
-      {
-        transformRequest: [URITransform],
-      }
-    )
-  )
+  const data = await Spotify.getAccessToken(user.refreshToken)
   return { ...user, accessToken: data.access_token }
 }
 
 const authUser = async (req, res) => {
   const { code } = req.query
   try {
-    const { data } = await guardedSpotifyLoad(() =>
-      axios.post(
-        'https://accounts.spotify.com/api/token',
-        {
-          code,
-          grant_type: 'authorization_code',
-          redirect_uri: process.env.REDIRECT_URI,
-        },
-        {
-          transformRequest: [URITransform],
-        }
-      )
-    )
-    const { data: userData } = await guardedSpotifyLoad(() =>
-      axios.get('https://api.spotify.com/v1/me', {
-        headers: {
-          Authorization: `Bearer ${data.access_token}`,
-        },
-      })
-    )
+    const data = await Spotify.initialAuth(code)
+    const userData = await Spotify.loadProfile(data.access_token)
     const existingUser = await User.findOne({
       email: userData.email,
     }).exec()
@@ -136,17 +83,9 @@ const syncUserArtists = async (req, res) => {
 
 const _syncUserArtists = async (userId) => {
   const user = await loadAuthedUser(userId)
-  const { data } = await guardedSpotifyLoad(() =>
-    axios.get('https://api.spotify.com/v1/me/top/artists', {
-      params: {
-        limit: 50,
-      },
-      headers: {
-        Authorization: `Bearer ${user.accessToken}`,
-      },
-    })
-  )
+  const data = await Spotify.loadTopArtists(user.accessToken)
   const { items } = data
+  // console.log(_.map(items, 'name').join(', '))
   const artists = await Artist.find({
     name: {
       $in: _.map(items, 'name'),
@@ -166,20 +105,17 @@ const _syncUserArtists = async (userId) => {
     })
   )
   await UserArtist.deleteMany({
-    ownerId: mongoose.Types.ObjectId(user._id),
-    artistId: {
-      $in: _.map(artists, '_id'),
-    },
+    ownerId: mongoose.Types.ObjectId(user._id)
   }).exec()
-  const now = new Date()
   await Promise.all(
     items.map(async (item, index) => {
       await loadRelatedArtists(userId, item)
       const artist = await findOrCreateArtist(item)
       await UserArtist.create({
         ownerId: user._id,
-        createdAt: new Date(+now - index),
+        createdAt: new Date(),
         artistId: artist._id,
+        rank: index,
       })
     })
   )
@@ -187,17 +123,9 @@ const _syncUserArtists = async (userId) => {
 
 const loadRelatedArtists = async (userId, artistItem) => {
   const user = await loadAuthedUser(userId)
-  const {
-    data: { artists },
-  } = await guardedSpotifyLoad(() =>
-    axios.get(
-      `https://api.spotify.com/v1/artists/${artistItem.id}/related-artists`,
-      {
-        headers: {
-          Authorization: `Bearer ${user.accessToken}`,
-        },
-      }
-    )
+  const { artists } = await Spotify.loadRelatedArtists(
+    user.accessToken,
+    artistItem.id
   )
   const artist = await findOrCreateArtist(artistItem)
   const now = new Date()
@@ -235,6 +163,7 @@ async function findOrCreateArtist(artist) {
   if (existing) return existing
   return await Artist.create({
     ...artist,
+    artistId: artist.id,
     followerCount: artist.followers.total,
   })
 }

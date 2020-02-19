@@ -13,6 +13,11 @@ const UserArtistSchema = new mongoose.Schema({
     type: mongoose.Types.ObjectId,
     required: true,
   },
+  rank: {
+    type: Number,
+    required: true,
+    unique: true,
+  }
 })
 
 UserArtistSchema.virtual('owner', {

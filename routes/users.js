@@ -37,7 +37,7 @@ const loadUsers = async (req, res) => {
 
 const loadUserArtists = async (req, res) => {
   const userArtists = (await UserArtist.find({})
-    .sort({ createdAt: -1 })
+    .sort({ rank: 1 })
     .populate(['artist', 'owner'])
     .lean()
     .exec()).filter((obj) => !!obj.artist)
