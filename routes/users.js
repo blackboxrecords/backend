@@ -68,7 +68,7 @@ const loadUserArtists = async (req, res) => {
         userArtist.name,
         userArtist.popularity,
         userArtist.followerCount,
-        (userArtist.genres || []).join(' '),
+        ...(userArtist.genres || []),
       ].join(',')
     )
     .value()
@@ -112,7 +112,7 @@ const loadRelatedArtists = async (req, res) => {
         `"${relatedArtist.name.replace('"', '""""')}"`,
         relatedArtist.popularity,
         relatedArtist.followerCount,
-        (relatedArtist.genres || []).join(' '),
+        ...(relatedArtist.genres || []),
       ].join()
     )
     .value()
@@ -133,7 +133,10 @@ const _loadRelatedArtistsByUser = async (userId) => {
     .lean()
     .exec()).filter((obj) => !!obj.artist)
   const rankedArtistById = _.chain(userArtists)
-    .map('artist')
+    .map((userArtist) => ({
+      ...userArtist.artist,
+      rank: userArtist.rank,
+    }))
     .keyBy((artist) => (artist._id || '').toString())
     .value()
   const _ids = userArtists.map((item) => item.artist._id)
@@ -159,7 +162,10 @@ const _loadRelatedArtistsByUser = async (userId) => {
     .groupBy('relatedArtistId')
     .forEach((_relatedArtists, id, obj) =>
       Object.assign(obj, {
-        [id]: _.map(_relatedArtists, 'rootArtist'),
+        [id]: _.chain(_relatedArtists)
+          .map('rootArtist')
+          .sortBy(['rank'])
+          .value(),
       })
     )
     .value()

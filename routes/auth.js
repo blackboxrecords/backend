@@ -115,7 +115,7 @@ const _syncUserArtists = async (userId) => {
         ownerId: user._id,
         createdAt: new Date(),
         artistId: artist._id,
-        rank: index,
+        rank: index + 1,
       })
     })
   )

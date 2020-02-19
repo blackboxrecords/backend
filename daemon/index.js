@@ -140,7 +140,7 @@ async function syncArtistsForUser(user) {
       ownerId: user._id,
       createdAt: new Date(),
       artistId: artist._id,
-      rank: index,
+      rank: index + 1,
     })
   }))
   return { artists: items }
