@@ -15,7 +15,12 @@ module.exports = {
  * @param user object An authorized user object
  **/
 async function syncUserArtists(user) {
-  const topArtists = await Spotify.loadTopArtists(user.accessToken)
+  let accessToken = user.accessToken
+  if (!accessToken) {
+    const auth = await Spotify.getAccessToken(user.refreshToken)
+    accessToken = auth.access_token
+  }
+  const topArtists = await Spotify.loadTopArtists(accessToken)
   const { items } = topArtists
   const artists = []
   await Promise.all(_.map(items, async (_artist) => {
