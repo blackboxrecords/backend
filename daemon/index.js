@@ -31,7 +31,7 @@ const RelatedArtist = mongoose.model('RelatedArtist')
       console.log()
       console.log(`Sync beginning at [${start.toISOString()}]`)
       await sync()
-      console.log(`Sync finished in ${+((new Date()) - +start) / 1000} seconds`)
+      console.log(`Sync finished in ${+((new Date()) - +start) / 60 / 1000} minutes`)
     } catch (err) {
       console.log()
       console.log(err)
@@ -74,7 +74,6 @@ async function sync() {
       lastPrint = new Date()
       printPercent(i, users.length)
     }
-    if (i > 10) break
     // Sync the user or skip
     try {
       if (!user.refreshToken) continue
