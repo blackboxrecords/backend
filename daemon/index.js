@@ -8,7 +8,8 @@ require('../models/user-artist')
 require('../models/artist')
 require('../models/related-artist')
 
-const Spotify = require('../spotify-sync')
+const Spotify = require('../logic/spotify')
+const SpotifySync = require('../logic/spotify-sync')
 const _ = require('lodash')
 
 const User = mongoose.model('User')
@@ -27,21 +28,24 @@ const RelatedArtist = mongoose.model('RelatedArtist')
   for (;;) {
     try {
       const start = new Date()
-      console.log(`Sync beginning at [${start.toISOString()}]`)
       console.log()
+      console.log(`Sync beginning at [${start.toISOString()}]`)
       await sync()
       console.log(`Sync finished in ${+((new Date()) - +start) / 1000} seconds`)
     } catch (err) {
+      console.log()
       console.log(err)
       if (failures++ >= 5) {
+        console.log()
         console.log('5 consecutive failures, exiting')
         process.exit(1)
       }
-      console.log('Uncaught error from sync function, resetting...')
+      console.log(`Uncaught error from sync function, resetting (${failures} of 5)`)
       await new Promise(r => setTimeout(r, 5000))
       continue
     }
     const now = new Date()
+    console.log()
     console.log(`Next sync at approximately [${new Date(+now + syncInterval).toISOString()}]`)
     console.log()
     await new Promise(r => setTimeout(r, syncInterval))
@@ -60,8 +64,8 @@ async function sync() {
   const users = await User.find({})
   const _artistsToUpdate = []
   const usersToUpdate = []
-  console.log(`Updating ${users.length} users...`)
   console.log()
+  console.log(`Updating ${users.length} users...`)
   let i = 0
   let lastPrint = 0
   for (const user of users) {
@@ -70,6 +74,7 @@ async function sync() {
       lastPrint = new Date()
       printPercent(i, users.length)
     }
+    if (i > 10) break
     // Sync the user or skip
     try {
       if (!user.refreshToken) continue
@@ -85,17 +90,19 @@ async function sync() {
         user.refreshToken = null
         continue
       } else {
+        console.log()
         console.log(`Error authing for ${user.email}`, err)
+        console.log()
         throw err
       }
     }
-    const { artists } = await syncArtistsForUser(user)
+    const { artists } = await SpotifySync.syncUserArtists(user)
     usersToUpdate.push(user)
     _artistsToUpdate.push(...artists)
   }
   const artistsToUpdate = _.uniqBy(_artistsToUpdate, 'name')
-  console.log(`Updating ${artistsToUpdate.length} artist-artist relations`)
   console.log()
+  console.log(`Updating ${artistsToUpdate.length} artist-artist relations`)
   const serverAuth = await Spotify.getAccessToken()
   i = lastPrint = 0
   for (const _artist of artistsToUpdate) {
@@ -104,83 +111,8 @@ async function sync() {
       lastPrint = new Date()
       printPercent(i, artistsToUpdate.length)
     }
-    const artist = await findOrCreateArtist(_artist)
+    const artist = await SpotifySync.findOrCreateArtist(_artist)
     // Clear the artist relations and recalculate
-    await updateArtist(serverAuth.access_token, artist)
+    await SpotifySync.syncRelatedArtists(serverAuth.access_token, artist)
   }
-}
-
-/**
- * @param user object An authorized user object
- **/
-async function syncArtistsForUser(user) {
-  const topArtists = await Spotify.loadTopArtists(user.accessToken)
-  const { items } = topArtists
-  const artists = []
-  await Promise.all(_.map(items, async (_artist) => {
-    const artist = await findOrCreateArtist(_artist)
-    artists.push(artist)
-    return await Artist.updateOne({
-      _id: artist._id
-    }, {
-      artistId: _artist.id,
-      uri: _artist.uri,
-    })
-  }))
-  await User.findOneAndUpdate({
-    _id: mongoose.Types.ObjectId(user._id),
-  }, {
-    lastSynced: new Date(),
-  }).exec()
-  await UserArtist.deleteMany({
-    ownerId: mongoose.Types.ObjectId(user._id)
-  }).exec()
-  await Promise.all(artists.map(async (artist, index) => {
-    await UserArtist.create({
-      ownerId: user._id,
-      createdAt: new Date(),
-      artistId: artist._id,
-      rank: index + 1,
-    })
-  }))
-  return { artists: items }
-}
-
-async function updateArtist(accessToken, artist) {
-  const { artists } = await Spotify.loadRelatedArtists(accessToken, artist.artistId)
-  // Do these operations in parallel, there's no spotify API interaction
-  let now = new Date()
-  await Promise.all(artists.map(async (_relatedArtist, index) => {
-    const relatedArtist = await findOrCreateArtist(_relatedArtist)
-    const existing = await RelatedArtist.findOne({
-      rootArtistId: mongoose.Types.ObjectId(artist._id),
-      relatedArtistId: mongoose.Types.ObjectId(relatedArtist._id),
-    }).exec()
-    if (existing) {
-      await RelatedArtist.updateOne({
-        _id: existing._id,
-      }, {
-        updatedAt: new Date()
-      })
-      return
-    }
-    await RelatedArtist.create({
-      rootArtistId: mongoose.Types.ObjectId(artist._id),
-      relatedArtistId: mongoose.Types.ObjectId(relatedArtist._id),
-      createdAt: new Date(+now - index),
-      updatedAt: new Date(+now - index),
-    })
-  }))
-}
-
-async function findOrCreateArtist(artist) {
-  const existing = await Artist.findOne({
-    name: artist.name,
-  }).exec()
-  if (existing) return existing
-  return await Artist.create({
-    ...artist,
-    artistId: artist.id,
-    followerCount: artist.followers.total,
-  })
 }

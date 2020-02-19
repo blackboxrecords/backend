@@ -1,6 +1,14 @@
 const axios = require('axios')
 const _ = require('lodash')
 
+module.exports = {
+  getAccessToken,
+  initialAuth,
+  loadProfile,
+  loadTopArtists,
+  loadRelatedArtists,
+}
+
 const AuthString = Buffer.from(
   `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
 ).toString('base64')
@@ -116,12 +124,4 @@ async function loadRelatedArtists(accessToken, artistId) {
     )
   })
   return data
-}
-
-module.exports = {
-  getAccessToken,
-  initialAuth,
-  loadProfile,
-  loadTopArtists,
-  loadRelatedArtists,
 }
