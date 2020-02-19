@@ -23,13 +23,23 @@ const RelatedArtist = mongoose.model('RelatedArtist')
     useNewUrlParser: true,
   })
   const syncInterval = 24 * 60 * 60 * 1000
+  let failures = 0
   for (;;) {
     try {
+      const start = new Date()
+      console.log(`Sync beginning at [${start.toISOString()}]`)
+      console.log()
       await sync()
+      console.log(`Sync finished in ${+((new Date()) - +start) / 1000} seconds`)
     } catch (err) {
       console.log(err)
-      console.log('Uncaught error from main thread, exiting')
-      process.exit(1)
+      if (failures++ >= 5) {
+        console.log('5 consecutive failures, exiting')
+        process.exit(1)
+      }
+      console.log('Uncaught error from sync function, resetting...')
+      await new Promise(r => setTimeout(r, 5000))
+      continue
     }
     const now = new Date()
     console.log(`Next sync at approximately [${new Date(+now + syncInterval).toISOString()}]`)
@@ -38,27 +48,28 @@ const RelatedArtist = mongoose.model('RelatedArtist')
   }
 })()
 
-function printPercent(index, length, intervalCount = 6) {
-  const interval = Math.floor(length / intervalCount)
-  if (index % interval === 0) {
-    const percent = interval * index / interval / length * 100
-    console.log(`${Math.floor(percent)}% complete`)
-  }
+function printPercent(index, length) {
+  const percent = index / length * 100
+  console.log(`[${(new Date()).toISOString()}] ${Math.floor(percent)}% complete`)
 }
 
 /**
  * Sync function, updates user artists
  **/
 async function sync() {
-  const start = new Date()
-  console.log(`Sync beginning at [${start.toISOString()}]`)
   const users = await User.find({})
   const _artistsToUpdate = []
   const usersToUpdate = []
   console.log(`Updating ${users.length} users...`)
+  console.log()
   let i = 0
+  let lastPrint = 0
   for (const user of users) {
-    printPercent(i++, users.length)
+    i += 1
+    if (+(new Date()) - lastPrint > 30 * 1000) {
+      lastPrint = new Date()
+      printPercent(i, users.length)
+    }
     // Sync the user or skip
     try {
       if (!user.refreshToken) continue
@@ -84,15 +95,19 @@ async function sync() {
   }
   const artistsToUpdate = _.uniqBy(_artistsToUpdate, 'name')
   console.log(`Updating ${artistsToUpdate.length} artist-artist relations`)
+  console.log()
   const serverAuth = await Spotify.getAccessToken()
-  i = 0
+  i = lastPrint = 0
   for (const _artist of artistsToUpdate) {
-    printPercent(i++, artistsToUpdate.length)
+    i += 1
+    if (+(new Date()) - lastPrint > 30 * 1000) {
+      lastPrint = new Date()
+      printPercent(i, artistsToUpdate.length)
+    }
     const artist = await findOrCreateArtist(_artist)
     // Clear the artist relations and recalculate
     await updateArtist(serverAuth.access_token, artist)
   }
-  console.log(`Sync finished in ${+((new Date()) - +start) / 1000} seconds`)
 }
 
 /**
@@ -153,7 +168,7 @@ async function updateArtist(accessToken, artist) {
       rootArtistId: mongoose.Types.ObjectId(artist._id),
       relatedArtistId: mongoose.Types.ObjectId(relatedArtist._id),
       createdAt: new Date(+now - index),
-      updatedAt: new Date(),
+      updatedAt: new Date(+now - index),
     })
   }))
 }
