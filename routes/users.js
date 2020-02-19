@@ -8,9 +8,10 @@ module.exports = (app) => {
   app.get('/users', loadUsers)
   app.get('/users/artists', loadUserArtists)
   app.get('/users/artists/related', loadRelatedArtists)
+  app.get('/users/genres', loadUserGenres)
 }
 
-const loadUsers = async (req, res) => {
+async function loadUsers(req, res) {
   if (req.query.id) {
     const user = await User.findOne({
       _id: mongoose.Types.ObjectId(req.query.id),
@@ -35,7 +36,65 @@ const loadUsers = async (req, res) => {
   )
 }
 
-const loadUserArtists = async (req, res) => {
+async function loadUserGenres(req, res) {
+  const userArtists = (await UserArtist.find({}))
+  const users = await User.find({})
+    .exec()
+  const genresByUserId = {}
+  await Promise.all(users.map(async (user) => {
+    genresByUserId[user._id] = await genresForUser(user)
+  }))
+  const fields = [
+    'Spotify Name',
+    'Spotify Email',
+    'Genres',
+  ]
+  const csv = _.chain(users)
+    .map((user) => [
+      user.name,
+      user.email,
+      genresByUserId[user._id]
+    ])
+    .map((arr) => arr.join(','))
+    .reverse()
+    .concat(fields.join(','))
+    .reverse()
+    .join('\n')
+    .value()
+  res.set('Content-Type', 'text/csv')
+  res.set('Content-Disposition', 'attachment; filename="user-genres.csv"')
+  res.send(csv)
+}
+
+const genresForUser = async (user) => {
+  const userArtists = await UserArtist.find({
+    ownerId: mongoose.Types.ObjectId(user._id),
+  })
+    .sort({ rank: 1 })
+    .populate(['artist'])
+    .lean()
+    .exec()
+  const artists = _.chain(userArtists)
+    .map('artist')
+    .compact()
+    .value()
+  const sortedGenres = _.chain(artists)
+    .map('genres')
+    .flatten()
+    .compact()
+    .countBy()
+    .map((count, genre) => ({
+      count,
+      genre
+    }))
+    .sortBy('count')
+    .reverse()
+    .map('genre')
+    .value()
+  return sortedGenres
+}
+
+async function loadUserArtists(req, res) {
   const userArtists = (await UserArtist.find({})
     .sort({ rank: 1 })
     .populate(['artist', 'owner'])
@@ -79,7 +138,7 @@ const loadUserArtists = async (req, res) => {
   res.send(finalCSV)
 }
 
-const loadRelatedArtists = async (req, res) => {
+async function loadRelatedArtists(req, res) {
   const users = await User.find({}).exec()
   const relatedArtists = await Promise.all(
     users.map(async (user) => {
