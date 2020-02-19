@@ -62,6 +62,26 @@ const syncUserArtists = async (req, res) => {
     })
       .lean()
       .exec()
+    if (!user.refreshToken) {
+      return res.status(400).json({ error: 'No refresh token for user' })
+    }
+    try {
+      const auth = await Spotify.getAccessToken(user.refreshToken)
+      user.accessToken = auth.access_token
+    } catch (err) {
+      if (_.get(err, 'response.data.error') === 'invalid_grant') {
+        await User.updateOne({
+          _id: mongoose.Types.ObjectId(user._id),
+        }, {
+          refreshToken: null
+        })
+        user.refreshToken = null
+        return res.status(400).json({ error: 'Refresh token is expired' })
+      } else {
+        throw err
+      }
+    }
+    const { artists } = await SpotifySync.syncUserArtists(user)
     await SpotifySync.syncUserArtists(user)
     const updatedUser = await User.findOne({
       _id: mongoose.Types.ObjectId(userId)

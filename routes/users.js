@@ -32,6 +32,7 @@ async function loadUsers(req, res) {
       name: user.name,
       email: user.email,
       lastSynced: user.lastSynced,
+      hasToken: user.refreshToken !== null,
     }))
   )
 }
