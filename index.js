@@ -17,11 +17,17 @@ app.use((req, res, next) => {
   next()
 })
 
+let mongoConnected = false
+
 app.use(async (req, res, next) => {
+  if (mongoConnected) {
+    return next()
+  }
   await mongoose.connect(process.env.DB_URI, {
     connectTimeoutMS: 5000,
     useNewUrlParser: true,
   })
+  mongoConnected = true
   next()
 })
 
