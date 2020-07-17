@@ -1,6 +1,7 @@
 /** Enters from "npm run daemon", see package.json **/
 
 const app = require('../')
+const mongoose = require('mongoose')
 app.listen(4000, (err) => {
   if (err) {
     console.log('Error starting server', err)
