@@ -9,6 +9,19 @@ module.exports = (app) => {
   app.get('/users/artists', loadUserArtists)
   app.get('/users/artists/related', loadRelatedArtists)
   app.get('/users/genres', loadUserGenres)
+  app.delete('/users/:id', deleteUser)
+}
+
+async function deleteUser(req, res) {
+  const { id } = req.params
+  const _id = mongoose.Types.ObjectId(id)
+  await UserArtist.deleteMany({
+    ownerId: _id,
+  }).exec()
+  const r = await User.deleteOne({
+    _id,
+  }).exec()
+  res.status(204).end()
 }
 
 async function loadUsers(req, res) {
