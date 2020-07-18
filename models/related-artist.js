@@ -34,8 +34,6 @@ RelatedArtistSchema.virtual('relatedArtist', {
 })
 
 RelatedArtistSchema.index({ rootArtistId: -1, relatedArtistId: -1, updatedAt: -1 })
-RelatedArtistSchema.index({ rootArtistId: -1 })
-RelatedArtistSchema.index({ relatedArtistId: -1 })
 RelatedArtistSchema.index({ updatedAt: -1 })
 
 mongoose.model('RelatedArtist', RelatedArtistSchema)
