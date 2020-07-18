@@ -7,6 +7,7 @@ module.exports = {
   loadProfile,
   loadTopArtists,
   loadRelatedArtists,
+  autoRetry,
 }
 
 const AuthString = Buffer.from(
@@ -29,7 +30,7 @@ async function rateLimited(fn) {
 }
 
 // For handling 5xx errors
-export async function autoRetry(fn, retryNum = 0) {
+async function autoRetry(fn, retryNum = 0) {
   try {
     return await fn()
   } catch (err) {
