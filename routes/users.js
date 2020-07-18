@@ -154,12 +154,17 @@ async function loadUserArtists(req, res) {
 
 async function loadRelatedArtists(req, res) {
   const users = await User.find({}).exec()
-  const relatedArtists = await Promise.all(
-    users.map(async (user) => {
-      const artists = await _loadRelatedArtistsByUser(user._id)
-      return artists.map((artist) => ({ ...artist, user }))
-    })
-  )
+  const relatedArtists = []
+  for (const user of users) {
+    const artists = await _loadRelatedArtistsByUser(user._id)
+    relatedArtists.push(artists.map((artist) => ({ ...artist, user })))
+  }
+  // const relatedArtists = await Promise.all(
+  //   users.map(async (user) => {
+  //     const artists = await _loadRelatedArtistsByUser(user._id)
+  //     return artists.map((artist) => ({ ...artist, user }))
+  //   })
+  // )
   const fields = [
     'Spotify Name',
     'Spotify Email',
