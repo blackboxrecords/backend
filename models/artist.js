@@ -51,4 +51,6 @@ const ArtistSchema = new mongoose.Schema({
   },
 })
 
+ArtistSchema.index({ name: -1 })
+
 mongoose.model('Artist', ArtistSchema)
