@@ -5,6 +5,7 @@ const UserArtist = mongoose.model('UserArtist')
 const Artist = mongoose.model('Artist')
 const RelatedArtist = mongoose.model('RelatedArtist')
 const _ = require('lodash')
+const { autoRetry } = require('./spotify')
 
 module.exports = {
   syncUserArtists,
@@ -20,7 +21,8 @@ async function syncUserArtists(user) {
     const auth = await Spotify.getAccessToken(user.refreshToken)
     accessToken = auth.access_token
   }
-  const topArtists = await Spotify.loadTopArtists(accessToken)
+  const topArtists = await autoRetry(() => Spotify.loadTopArtists(accessToken))
+  const topArtists = await autoRetry(() => Spotify.loadTopArtists(accessToken))
   const { items } = topArtists
   const artists = []
   await Promise.all(_.map(items, async (_artist) => {
@@ -53,7 +55,9 @@ async function syncUserArtists(user) {
 }
 
 async function syncRelatedArtists(accessToken, artist) {
-  const { artists } = await Spotify.loadRelatedArtists(accessToken, artist.artistId)
+  const { artists } = await autoRetry(
+    () => Spotify.loadRelatedArtists(accessToken, artist.artistId)
+  )
   // Do these operations in parallel, there's no spotify API interaction
   let now = new Date()
   await Promise.all(artists.map(async (_relatedArtist, index) => {

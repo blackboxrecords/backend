@@ -28,6 +28,18 @@ async function rateLimited(fn) {
   }
 }
 
+// For handling 5xx errors
+export async function autoRetry(fn, retryNum = 0) {
+  try {
+    return await fn()
+  } catch (err) {
+    if (retryNum > 3) throw err
+    return await autoRetry(fn, ++retryNum)
+  }
+}
+
+// carmen something
+
 /**
  * @param refreshToken string optional
  * @returns { access_token: string, refresh_token?: string }
