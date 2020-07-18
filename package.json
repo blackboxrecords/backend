@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node -e \"require('dotenv').config(); require('.').listen(4000);\"",
     "daemon": "node -e \"require('dotenv').config(); require('./daemon')\"",
+    "server": "node -e \"require('dotenv').config(); require('./server')\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

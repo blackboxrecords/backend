@@ -1,14 +1,12 @@
 /** Enters from "npm run daemon", see package.json **/
 
-const app = require('../')
 const mongoose = require('mongoose')
-app.listen(4000, (err) => {
-  if (err) {
-    console.log('Error starting server', err)
-    process.exit(1)
-  }
-  console.log('Listening on port 4000')
-})
+mongoose.set('useCreateIndex', true)
+mongoose.set('useFindAndModify', false)
+require('./models/user')
+require('./models/user-artist')
+require('./models/artist')
+require('./models/related-artist')
 
 const Spotify = require('../logic/spotify')
 const SpotifySync = require('../logic/spotify-sync')
