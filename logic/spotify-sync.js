@@ -22,7 +22,6 @@ async function syncUserArtists(user) {
     accessToken = auth.access_token
   }
   const topArtists = await autoRetry(() => Spotify.loadTopArtists(accessToken))
-  const topArtists = await autoRetry(() => Spotify.loadTopArtists(accessToken))
   const { items } = topArtists
   const artists = []
   await Promise.all(_.map(items, async (_artist) => {
