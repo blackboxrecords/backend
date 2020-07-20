@@ -39,8 +39,6 @@ async function autoRetry(fn, retryNum = 0) {
   }
 }
 
-// carmen something
-
 /**
  * @param refreshToken string optional
  * @returns { access_token: string, refresh_token?: string }

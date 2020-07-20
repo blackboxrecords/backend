@@ -12,7 +12,7 @@ const app = express()
 app.use(express.json())
 app.use((req, res, next) => {
   res.set('Access-Control-Allow-Origin', '*')
-  res.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+  res.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, DELETE')
   res.set('Access-Control-Allow-Headers', 'content-type')
   next()
 })
