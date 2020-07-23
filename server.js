@@ -31,7 +31,7 @@ const { port } = server.address()
         }
       })
       console.log('export related artists')
-      await axios.get(`http://127.0.0.1:${port}/users/artists/genres`, {
+      await axios.get(`http://127.0.0.1:${port}/users/genres`, {
         params: {
           refresh: true,
           token: process.env.LOCAL_SECRET,
