@@ -4,6 +4,8 @@ const UserArtist = mongoose.model('UserArtist')
 const RelatedArtist = mongoose.model('RelatedArtist')
 const _ = require('lodash')
 const auth = require('../middleware/auth')
+const path = require('path')
+const axios = require('axios')
 
 module.exports = (app) => {
   app.get('/users', auth, loadUsers)
@@ -52,6 +54,18 @@ async function loadUsers(req, res) {
 }
 
 async function loadUserGenres(req, res) {
+  const { refresh } = req.query
+  const filepath = path.join(process.env.CACHE_PATH, 'genres.csv')
+  if (
+    refresh !== 'true' &&
+    process.env.CACHE_PATH &&
+    fs.existsSync(filepath)
+  ) {
+    res.set('Content-Type', 'text/csv')
+    res.set('Content-Disposition', 'attachment; filename="user-genres.csv"')
+    res.send(fs.readFileSync(filepath))
+    return
+  }
   const userArtists = (await UserArtist.find({}))
   const users = await User.find({})
     .exec()
@@ -79,6 +93,11 @@ async function loadUserGenres(req, res) {
   res.set('Content-Type', 'text/csv')
   res.set('Content-Disposition', 'attachment; filename="user-genres.csv"')
   res.send(csv)
+  fs.writeFile(filepath, csv, (err) => {
+    if (!err) return
+    console.log(err)
+    console.log('Error writing to file')
+  })
 }
 
 const genresForUser = async (user) => {
@@ -110,6 +129,18 @@ const genresForUser = async (user) => {
 }
 
 async function loadUserArtists(req, res) {
+  const { refresh } = req.query
+  const filepath = path.join(process.env.CACHE_PATH, 'artists.csv')
+  if (
+    refresh !== 'true' &&
+    process.env.CACHE_PATH &&
+    fs.existsSync(filepath)
+  ) {
+    res.set('Content-Type', 'text/csv')
+    res.set('Content-Disposition', 'attachment; filename="artist-data.csv"')
+    res.send(fs.readFileSync(filepath))
+    return
+  }
   const userArtists = (await UserArtist.find({})
     .sort({ rank: 1 })
     .populate(['artist', 'owner'])
@@ -151,9 +182,26 @@ async function loadUserArtists(req, res) {
   res.set('Content-Type', 'text/csv')
   res.set('Content-Disposition', 'attachment; filename="artist-data.csv"')
   res.send(finalCSV)
+  fs.writeFile(filepath, finalCSV, (err) => {
+    if (!err) return
+    console.log(err)
+    console.log('Error writing to file')
+  })
 }
 
 async function loadRelatedArtists(req, res) {
+  const { refresh } = req.query
+  const filepath = path.join(process.env.CACHE_PATH, 'related-artists.csv')
+  if (
+    refresh !== 'true' &&
+    process.env.CACHE_PATH &&
+    fs.existsSync(filepath)
+  ) {
+    res.set('Content-Type', 'text/csv')
+    res.set('Content-Disposition', 'attachment; filename="related-data.csv"')
+    res.send(fs.readFileSync(filepath))
+    return
+  }
   const users = await User.find({}).exec()
   const relatedArtists = []
   for (const user of users) {
@@ -200,6 +248,11 @@ async function loadRelatedArtists(req, res) {
   res.set('Content-Type', 'text/csv')
   res.set('Content-Disposition', 'attachment; filename="related-data.csv"')
   res.send(finalCSV)
+  fs.writeFile(filepath, finalCSV, (err) => {
+    if (!err) return
+    console.log(err)
+    console.log('Error writing to file')
+  })
 }
 
 const _loadRelatedArtistsByUser = async (userId) => {
