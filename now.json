@@ -5,14 +5,15 @@
     "DB_URI": "@db-uri",
     "SPOTIFY_CLIENT_ID": "@spotify-client-id",
     "SPOTIFY_CLIENT_SECRET": "@spotify-client-secret",
-    "REDIRECT_URI": "@redirect-uri"
+    "REDIRECT_URI": "@redirect-uri",
+    "WEB_TOKEN_SECRET": "@web-token-secret"
   },
   "builds": [{ "src": "index.js", "use": "@now/node" }],
   "routes": [
     {
       "src": "(.*)",
       "dest": "/index.js",
-      "methods": ["GET", "POST", "OPTIONS", "DELETE"]
+      "methods": ["GET", "POST", "PUT", "OPTIONS", "DELETE"]
     }
   ]
 }

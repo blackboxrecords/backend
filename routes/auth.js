@@ -6,10 +6,11 @@ const RelatedArtist = mongoose.model('RelatedArtist')
 const Spotify = require('../logic/spotify')
 const SpotifySync = require('../logic/spotify-sync')
 const _ = require('lodash')
+const auth = require('../middleware/auth')
 
 module.exports = (app) => {
-  app.get('/auth', authUser)
-  app.get('/sync', syncUserArtists)
+  app.get('/auth', auth, authUser)
+  app.get('/sync', auth, syncUserArtists)
 }
 
 // A function to auto exchange a refresh token for a new access token

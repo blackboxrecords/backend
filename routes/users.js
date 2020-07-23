@@ -3,13 +3,14 @@ const User = mongoose.model('User')
 const UserArtist = mongoose.model('UserArtist')
 const RelatedArtist = mongoose.model('RelatedArtist')
 const _ = require('lodash')
+const auth = require('../middleware/auth')
 
 module.exports = (app) => {
-  app.get('/users', loadUsers)
-  app.get('/users/artists', loadUserArtists)
-  app.get('/users/artists/related', loadRelatedArtists)
-  app.get('/users/genres', loadUserGenres)
-  app.delete('/users/:id', deleteUser)
+  app.get('/users', auth, loadUsers)
+  app.get('/users/artists', auth, loadUserArtists)
+  app.get('/users/artists/related', auth, loadRelatedArtists)
+  app.get('/users/genres', auth, loadUserGenres)
+  app.delete('/users/:id', auth, deleteUser)
 }
 
 async function deleteUser(req, res) {
