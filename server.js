@@ -9,10 +9,9 @@ const server = app.listen(4000, (err) => {
   console.log('Listening on port 4000')
 })
 
-server.timeout = 240000
+server.timeout = 5 * 60 * 1000
 
-const { address, port } = server.address()
-console.log(address, port)
+const { port } = server.address()
 
 // Auto refresh the exported contents
 ;(async () => {
